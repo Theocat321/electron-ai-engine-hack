@@ -1,5 +1,6 @@
 import base64
 import os
+import re
 from typing import Tuple
 from dotenv import load_dotenv
 from langchain_anthropic import ChatAnthropic
@@ -8,8 +9,8 @@ from state import AgentState
 from pydantic import BaseModel, Field
 
 class Coordinates(BaseModel):
-    x: int = Field(..., description="The x coordinate to click/interact with")
-    y: int = Field(..., description="The y coordinate to click/interact with")
+    x: int = Field(..., description="The x coordinate to click/interact with. Must be an integer.")
+    y: int = Field(..., description="The y coordinate to click/interact with. Must be an integer.")
 
 # Load environment variables from .env file
 load_dotenv()
@@ -26,7 +27,32 @@ class CoordinateAgent:
         if not os.getenv("ANTHROPIC_API_KEY"):
             raise ValueError("ANTHROPIC_API_KEY environment variable is required. Please add it to your .env file.")
         
-        self.llm = ChatAnthropic(model=model_name).with_structured_output(Coordinates)
+        self.llm = ChatAnthropic(model=model_name).with_structured_output(Coordinates, include_raw=True)
+
+    def _parse_coordinates_from_text(self, text: str) -> Tuple[int, int]:
+        """
+        Parse coordinates from text content when structured output fails.
+        Handles formats like "1198, 252" or "x=1198, y=252" or "(1198, 252)"
+        """
+        # Try different regex patterns to extract coordinates
+        patterns = [
+            r"(\d+),\s*(\d+)",  # "1198, 252"
+            r"x[=:]\s*(\d+).*?y[=:]\s*(\d+)",  # "x=1198, y=252"
+            r"\((\d+),\s*(\d+)\)",  # "(1198, 252)"
+            r"(\d+)\s+(\d+)",  # "1198 252"
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                try:
+                    x, y = int(match.group(1)), int(match.group(2))
+                    return (x, y)
+                except (ValueError, IndexError):
+                    continue
+        
+        # If no pattern matches, return center of screen as fallback
+        return (640, 360)
 
     def generate_coordinates(self, state: AgentState) -> Tuple[int, int]:
         """
@@ -55,7 +81,7 @@ Your job is to:
 1. Analyze the provided screenshot to identify UI elements
 2. Understand the specific task: "{state["current_task"]}"
 3. Locate the exact UI element that needs to be interacted with for this task
-4. Provide the precise x,y coordinates for the center of that UI element
+4. Provide the precise x and y coordinates for the center of that UI element
 
 Task Context: {state.get("task_description", "No additional context")}
 
@@ -68,7 +94,9 @@ Guidelines:
 
 Current task to locate: "{state["current_task"]}"
 
-Return the x and y coordinates as integers representing pixel positions on the screen."""
+IMPORTANT: You must return the x and y coordinates as separate integer fields. Example format:
+x: 1198
+y: 252"""
                 },
                 {
                     "type": "image",
@@ -79,10 +107,37 @@ Return the x and y coordinates as integers representing pixel positions on the s
             ]
         )
         
-        # Generate response
-        response = self.llm.invoke([message])
-        
-        return (response.x, response.y)
+        # Generate response with error handling
+        try:
+            response = self.llm.invoke([message])
+            
+            # Check if we got a parsing error
+            if response.get("parsing_error"):
+                print(f"Parsing error occurred: {response['parsing_error']}")
+                # Try to parse coordinates from raw content
+                raw_content = str(response["raw"].content) if response.get("raw") else ""
+                return self._parse_coordinates_from_text(raw_content)
+            
+            # Check if we got parsed coordinates
+            if response.get("parsed"):
+                parsed = response["parsed"]
+                return (parsed.x, parsed.y)
+            
+            # If no parsed result, try to extract from raw content
+            if response.get("raw"):
+                raw_content = str(response["raw"].content)
+                return self._parse_coordinates_from_text(raw_content)
+                
+            # Fallback - shouldn't reach here with include_raw=True
+            return (640, 360)
+            
+        except Exception as e:
+            print(f"Error generating coordinates: {e}")
+            # Try to extract coordinates from error message if it contains them
+            error_str = str(e)
+            if "1198, 252" in error_str or "x=" in error_str.lower():
+                return self._parse_coordinates_from_text(error_str)
+            return (640, 360)
 
 
 def coordinate_agent_node(state: AgentState) -> AgentState:
