@@ -5,8 +5,10 @@ Provides endpoints for the frontend to interact with the AI agents.
 """
 
 import base64
+import os
+import time
 from typing import Optional
-from fastapi import FastAPI, HTTPException, File, UploadFile, Form
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
@@ -16,7 +18,7 @@ from coordinate_agent import coordinate_agent_node
 
 app = FastAPI(title="AI Agent Backend", version="1.0.0")
 
-# Add CORS middleware to allow requests from frontend
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # In production, specify actual frontend URLs
@@ -25,8 +27,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global state storage (in production, use proper state management)
+# Global state storage (replace with real state mgmt in prod)
 current_state: Optional[AgentState] = None
+
+# Create uploads directory
+UPLOADS_DIR = "uploads"
+os.makedirs(UPLOADS_DIR, exist_ok=True)
 
 
 class InitialRequest(BaseModel):
@@ -53,20 +59,28 @@ async def initialize_session(request: InitialRequest):
     Returns the first task and coordinates.
     """
     global current_state
-    
+
     try:
         # Decode base64 image
         image_data = base64.b64decode(request.screenshot_base64)
-        
-        # Create initial state
+
+        # Save image to uploads folder
+        timestamp = int(time.time())
+        file_path = os.path.join(UPLOADS_DIR, f"screenshot_{timestamp}.png")
+        with open(file_path, "wb") as buffer:
+            buffer.write(image_data)
+
+        print(f"Saved screenshot to: {file_path}")
+
+        # Create initial state with image data and query
         current_state = create_initial_state(image_data, request.user_query)
-        
+
         # Run orchestration agent to get first task
         current_state = orchestration_agent_node(current_state)
-        
+
         # Run coordinate agent to get coordinates
         current_state = coordinate_agent_node(current_state)
-        
+
         return CoordinateResponse(
             x=current_state["coordinates"][0],
             y=current_state["coordinates"][1],
@@ -74,7 +88,7 @@ async def initialize_session(request: InitialRequest):
             task_description=current_state["task_description"],
             is_completed=current_state["is_task_completed"]
         )
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
 
@@ -86,21 +100,27 @@ async def update_screenshot_and_continue(request: UpdateScreenshotRequest):
     Returns the next task and coordinates.
     """
     global current_state
-    
+
     if current_state is None:
         raise HTTPException(status_code=400, detail="No active session. Please initialize first.")
-    
+
     try:
         # Decode base64 image
         image_data = base64.b64decode(request.screenshot_base64)
-        
+
+        # Save image
+        timestamp = int(time.time())
+        file_path = os.path.join(UPLOADS_DIR, f"screenshot_update_{timestamp}.png")
+        with open(file_path, "wb") as buffer:
+            buffer.write(image_data)
+
         # Update screenshot in state
         current_state = update_screenshot(current_state, image_data)
-        
+
         # Run orchestration agent to get next task
         current_state = orchestration_agent_node(current_state)
-        
-        # Check if task is completed
+
+        # If task completed
         if current_state["is_task_completed"]:
             return CoordinateResponse(
                 x=0,
@@ -109,10 +129,10 @@ async def update_screenshot_and_continue(request: UpdateScreenshotRequest):
                 task_description="All tasks have been completed successfully.",
                 is_completed=True
             )
-        
-        # Run coordinate agent to get coordinates for new task
+
+        # Run coordinate agent to get new coordinates
         current_state = coordinate_agent_node(current_state)
-        
+
         return CoordinateResponse(
             x=current_state["coordinates"][0],
             y=current_state["coordinates"][1],
@@ -120,7 +140,7 @@ async def update_screenshot_and_continue(request: UpdateScreenshotRequest):
             task_description=current_state["task_description"],
             is_completed=current_state["is_task_completed"]
         )
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
 
@@ -131,10 +151,10 @@ async def get_status():
     Get the current status of the session.
     """
     global current_state
-    
+
     if current_state is None:
         return {"status": "No active session"}
-    
+
     return {
         "status": "Active session",
         "current_task": current_state.get("current_task"),

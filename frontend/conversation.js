@@ -66,12 +66,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             console.log('Parsing JSON response...');
-            const data = await response.json();
-            console.log('API Response data:', data);
+            const res = await response.json();
+            console.log('API Response data:', res);
 
             // Update the message text with the response
-            console.log('Updating message text to:', data.text || data.message || 'Request completed');
-            messageText.textContent = data.text || data.message || 'Request completed';
+            console.log('Updating message text to:', res.task || res.text || res.message || 'Request completed');
+            messageText.textContent = res.task || res.text || res.message || 'Request completed';
 
             setTimeout(() => {
                 updateWindowSize();
@@ -80,15 +80,15 @@ document.addEventListener('DOMContentLoaded', () => {
             // Create hotspot using the coordinates from the response
             console.log('Checking for electronAPI and coords...');
             console.log('window.electronAPI exists:', !!window.electronAPI);
-            console.log('data.coords exists:', !!data.coords);
-            console.log('data.coords value:', data.coords);
+            console.log('res.coords exists:', !!res.coords);
+            console.log('res.coords value:', res.coords);
 
-            if (window.electronAPI && data.coords) {
+            if (window.electronAPI && res.coords) {
                 console.log('Sending hotspot creation request to main window...');
                 const hotspotData = {
                     type: 'create-hotspot',
-                    coords: data.coords,
-                    label: data.text || data.message || 'Request completed',
+                    coords: res.coords,
+                    label: res.task || res.text || res.message || 'Request completed',
                     action: 'click'
                 };
                 console.log('Hotspot data being sent:', hotspotData);
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 console.error('Cannot create hotspot - missing electronAPI or coords');
                 console.log('electronAPI available:', !!window.electronAPI);
-                console.log('coords available:', !!data.coords);
+                console.log('coords available:', !!res.coords);
             }
 
         } catch (error) {

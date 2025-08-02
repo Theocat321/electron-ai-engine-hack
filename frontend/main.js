@@ -4,11 +4,7 @@ const { app, BrowserWindow, ipcMain, desktopCapturer, systemPreferences, screen 
 const path = require('path');
 const fs = require('fs');
 
-app.disableHardwareAcceleration();
-
 let mainWindow, inputWindow;
-
-app.disableHardwareAcceleration();
 
 app.whenReady().then(() => {
     // -- Main overlay window --

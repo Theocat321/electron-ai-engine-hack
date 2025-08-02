@@ -152,7 +152,7 @@ function createConversationInterface(container, instruction) {
 
                     type: 'create-hotspot',
                     coords: { x: data.x, y: data.y },
-                    label: data.task_description || 'Request completed',
+                    label: data.task || 'Request completed',
                     action: 'click'
                 });
             }
