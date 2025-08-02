@@ -1,12 +1,10 @@
 // main.js
 const { app, BrowserWindow, ipcMain, desktopCapturer, systemPreferences, screen } = require('electron');
 const path = require('path');
-const robot = require('robotjs');
 const fs = require('fs');
 
 let mainWindow, inputWindow, hotspotWindow;
 
-app.disableHardwareAcceleration();
 
 app.whenReady().then(() => {
     // -- Main overlay window --
@@ -43,7 +41,7 @@ app.whenReady().then(() => {
     inputWindow = new BrowserWindow({
         transparent: true,
         frame: false, // Make sure this is false for custom window chrome
-        width: 300,   // Smaller width
+        width: 350,   // Increased width for Status button
         height: 60,   // Smaller height
         x: 50,
         y: 50,
@@ -57,21 +55,18 @@ app.whenReady().then(() => {
             nodeIntegration: false,
             contextIsolation: true,
             webSecurity: false,
-            allowRunningInsecureContent: true
+            allowRunningInsecureContent: true,
+            webviewTag: false
         }
     });
 
-    // Set custom CSP to allow Google Fonts and Material Icons
+    // Remove CSP restrictions completely for testing
     inputWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
         callback({
             responseHeaders: {
                 ...details.responseHeaders,
-                'Content-Security-Policy': [
-                    "default-src 'self'; " +
-                    "script-src 'self'; " +
-                    "style-src 'self' https://fonts.googleapis.com; " +
-                    "font-src 'self' https://fonts.gstatic.com"
-                ]
+                // Remove Content-Security-Policy header completely
+                'Content-Security-Policy': undefined
             }
         });
     });
@@ -94,8 +89,8 @@ ipcMain.on('move-hotspot', (_, p) => {
 ipcMain.on('hide-hotspot', () => hotspotWindow?.hide());
 ipcMain.on('hotspot-click', (_, pos) => console.log('Hotspot clicked at', pos));
 ipcMain.on('perform-system-click', (_, c) => {
-    robot.moveMouse(c.x, c.y);
-    robot.mouseClick();
+    console.log('System click requested at:', c.x, c.y);
+    // robotjs removed - implement alternative click mechanism if needed
 });
 
 ipcMain.on('resize-input-window', (_, { width, height }) => {

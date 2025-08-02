@@ -3,6 +3,7 @@
 import os
 from fastapi import FastAPI, Form, HTTPException, UploadFile, File
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from state import create_initial_state
 from orchestration_agent import OrchestrationAgent
@@ -10,6 +11,18 @@ from coordinate_agent import CoordinateAgent
 
 load_dotenv()
 app = FastAPI(title="Agent Runner API")
+
+# Add CORS middleware to allow requests from frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify actual frontend URLs
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Global state storage (in production, use proper state management)
+current_session_state = None
 
 @app.post("/run")
 async def run_agents(

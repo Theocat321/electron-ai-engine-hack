@@ -26,8 +26,81 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
     sendIcon.textContent = 'send';
 
     button.appendChild(sendIcon);
+
+    // Add Status button
+    const statusButton = document.createElement('button');
+    statusButton.className = 'status-button';
+    statusButton.textContent = 'Status';
+    statusButton.setAttribute('data-no-drag', 'true');
+    
+    // Add debounce mechanism to prevent multiple rapid clicks
+    let isStatusLoading = false;
+    
+    // Simple synchronous handler to avoid GLib issues
+    const handleStatusClick = () => {
+        if (isStatusLoading) return;
+        isStatusLoading = true;
+        statusButton.disabled = true;
+        statusButton.textContent = 'Loading...';
+        
+        // Use setTimeout to defer the async operation
+        setTimeout(async () => {
+            try {
+                console.log('Fetching status from backend...');
+                console.log('About to fetch from:', 'http://localhost:8000/status');
+                console.log('Window location:', window.location.href);
+                
+                const response = await fetch('http://localhost:8000/status');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Status response:', data);
+                
+                // Log status instead of alert to avoid potential GLib issues
+                console.log('=== STATUS ===');
+                console.log(`Status: ${data.status}`);
+                if (data.current_task) {
+                    console.log(`Current Task: ${data.current_task}`);
+                    if (data.coordinates && Array.isArray(data.coordinates)) {
+                        console.log(`Coordinates: [${data.coordinates.join(', ')}]`);
+                    }
+                    console.log(`Task History Count: ${data.task_history_count || 0}`);
+                }
+                console.log('=== END STATUS ===');
+                
+                // Update button text to show success
+                statusButton.textContent = 'Success!';
+                setTimeout(() => {
+                    statusButton.textContent = 'Status';
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Error fetching status:', error);
+                console.error('Error details:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
+                statusButton.textContent = `Error: ${error.message}`;
+                setTimeout(() => {
+                    statusButton.textContent = 'Status';
+                }, 3000);
+            } finally {
+                isStatusLoading = false;
+                statusButton.disabled = false;
+            }
+        }, 0);
+    };
+    
+    // Add event listener with proper cleanup
+    statusButton.addEventListener('click', handleStatusClick);
+
     inputContainer.appendChild(textarea);
     inputContainer.appendChild(button);
+    inputContainer.appendChild(statusButton);
     box.appendChild(inputContainer);
 
     // No need for output element anymore
@@ -102,6 +175,77 @@ function createConversationInterface(container, instruction) {
     nextButton.disabled = true;
     nextButton.setAttribute('data-no-drag', 'true');
 
+    // Add Status button to conversation interface
+    const conversationStatusButton = document.createElement('button');
+    conversationStatusButton.className = 'status-button';
+    conversationStatusButton.textContent = 'Status';
+    conversationStatusButton.setAttribute('data-no-drag', 'true');
+    
+    // Add debounce mechanism to prevent multiple rapid clicks
+    let isConversationStatusLoading = false;
+    
+    // Simple synchronous handler to avoid GLib issues
+    const handleConversationStatusClick = () => {
+        if (isConversationStatusLoading) return;
+        isConversationStatusLoading = true;
+        conversationStatusButton.disabled = true;
+        conversationStatusButton.textContent = 'Loading...';
+        
+        // Use setTimeout to defer the async operation
+        setTimeout(async () => {
+            try {
+                console.log('Fetching status from backend...');
+                console.log('About to fetch from:', 'http://localhost:8000/status');
+                console.log('Window location:', window.location.href);
+                
+                const response = await fetch('http://localhost:8000/status');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Status response:', data);
+                
+                // Log status instead of alert to avoid potential GLib issues
+                console.log('=== STATUS ===');
+                console.log(`Status: ${data.status}`);
+                if (data.current_task) {
+                    console.log(`Current Task: ${data.current_task}`);
+                    if (data.coordinates && Array.isArray(data.coordinates)) {
+                        console.log(`Coordinates: [${data.coordinates.join(', ')}]`);
+                    }
+                    console.log(`Task History Count: ${data.task_history_count || 0}`);
+                }
+                console.log('=== END STATUS ===');
+                
+                // Update button text to show success
+                conversationStatusButton.textContent = 'Success!';
+                setTimeout(() => {
+                    conversationStatusButton.textContent = 'Status';
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Error fetching status:', error);
+                console.error('Error details:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
+                conversationStatusButton.textContent = `Error: ${error.message}`;
+                setTimeout(() => {
+                    conversationStatusButton.textContent = 'Status';
+                }, 3000);
+            } finally {
+                isConversationStatusLoading = false;
+                conversationStatusButton.disabled = false;
+            }
+        }, 0);
+    };
+    
+    // Add event listener with proper cleanup
+    conversationStatusButton.addEventListener('click', handleConversationStatusClick);
+
     // Function to calculate and update window size based on content
     function updateWindowSize() {
         // Calculate the required height based on the content
@@ -109,6 +253,7 @@ function createConversationInterface(container, instruction) {
         const buttonHeight = 50; // Approximate button height
         const padding = 60; // Total padding (30px top + 30px bottom)
         const minHeight = 120; // Minimum window height
+        const minWidth = 350; // Increased width to accommodate two buttons
 
         const requiredHeight = Math.max(minHeight, messageHeight + buttonHeight + padding);
 
@@ -121,7 +266,7 @@ function createConversationInterface(container, instruction) {
 
         // Send resize request to main process
         if (window.electronAPI && window.electronAPI.resizeInputWindow) {
-            window.electronAPI.resizeInputWindow(300, requiredHeight);
+            window.electronAPI.resizeInputWindow(minWidth, requiredHeight);
         }
     }
 
@@ -144,8 +289,9 @@ function createConversationInterface(container, instruction) {
     }
 
     // Function to make API request
-    async function makeApiRequest() {
+    async function makeApiRequest(isInitial = true) {
         console.log('=== Starting API Request ===');
+        console.log('Is initial request:', isInitial);
         try {
             showLoading();
 
@@ -153,26 +299,34 @@ function createConversationInterface(container, instruction) {
             console.log('Capturing screenshot...');
             const screenshotBase64 = await window.electronAPI.getScreenshot();
 
-            // Convert base64 to blob
-            const byteCharacters = atob(screenshotBase64);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            let endpoint, requestBody;
+            
+            if (isInitial) {
+                // First request - use initialize endpoint
+                endpoint = 'http://localhost:8000/initialize';
+                requestBody = {
+                    user_query: instruction,
+                    screenshot_base64: screenshotBase64
+                };
+            } else {
+                // Subsequent requests - use update_screenshot endpoint
+                endpoint = 'http://localhost:8000/update_screenshot';
+                requestBody = {
+                    screenshot_base64: screenshotBase64
+                };
             }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: 'image/png' });
 
-            // Create FormData with image and query
-            const formData = new FormData();
-            formData.append('image_path', blob, 'img.png');
-            formData.append('query', instruction);
+            console.log(`Making fetch request to ${endpoint}`);
+            if (isInitial) {
+                console.log('Query:', instruction);
+            }
 
-            console.log('Making fetch request to http://localhost:8000/run');
-            console.log('Query:', instruction);
-
-            const response = await fetch('http://localhost:8000/run', {
+            const response = await fetch(endpoint, {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody)
             });
 
             console.log('Response received:', { status: response.status, ok: response.ok });
@@ -185,9 +339,12 @@ function createConversationInterface(container, instruction) {
             const data = await response.json();
             console.log('API Response data:', data);
 
-            // Update the message text with the response
-            console.log('Updating message text to:', data.text || data.message || 'Request completed');
-            messageText.textContent = data.text || data.message || 'Request completed';
+            // Store the current task data for future use
+            window.currentTaskData = data;
+
+            // Update the message text with the task description
+            console.log('Updating message text to:', data.task_description || data.task || 'Request completed');
+            messageText.textContent = data.task_description || data.task || 'Request completed';
 
             // Update window size after text content changes
             setTimeout(() => {
@@ -195,17 +352,17 @@ function createConversationInterface(container, instruction) {
             }, 100); // Small delay to ensure text is rendered
 
             // Create hotspot using the coordinates from the response
-            console.log('Checking for electronAPI and coords...');
+            console.log('Checking for electronAPI and coordinates...');
             console.log('window.electronAPI exists:', !!window.electronAPI);
-            console.log('data.coords exists:', !!data.coords);
-            console.log('data.coords value:', data.coords);
+            console.log('data.x and data.y exist:', !!data.x, !!data.y);
+            console.log('Coordinates:', { x: data.x, y: data.y });
 
-            if (window.electronAPI && data.coords) {
+            if (window.electronAPI && data.x !== undefined && data.y !== undefined) {
                 console.log('Sending hotspot creation request to main window...');
                 const hotspotData = {
                     type: 'create-hotspot',
-                    coords: data.coords,
-                    label: data.text || data.message || 'Request completed',
+                    coords: { x: data.x, y: data.y },
+                    label: data.task || 'Click here',
                     action: 'click'
                 };
                 console.log('Hotspot data being sent:', hotspotData);
@@ -213,9 +370,27 @@ function createConversationInterface(container, instruction) {
                 window.electronAPI.sendToMainWindow(hotspotData);
                 console.log('Hotspot creation request sent successfully');
             } else {
-                console.error('Cannot create hotspot - missing electronAPI or coords');
+                console.error('Cannot create hotspot - missing electronAPI or coordinates');
                 console.log('electronAPI available:', !!window.electronAPI);
-                console.log('coords available:', !!data.coords);
+                console.log('coordinates available:', data.x !== undefined && data.y !== undefined);
+            }
+
+            // Check if task is completed
+            if (data.is_completed) {
+                messageText.textContent = 'All tasks completed successfully!';
+                nextButton.textContent = 'Start New Task';
+                nextButton.disabled = false;
+                
+                // Reset the session when clicking after completion
+                nextButton.onclick = async () => {
+                    try {
+                        await fetch('http://localhost:8000/reset', { method: 'POST' });
+                        // Reload the input interface
+                        window.location.reload();
+                    } catch (error) {
+                        console.error('Error resetting session:', error);
+                    }
+                };
             }
 
         } catch (error) {
@@ -238,15 +413,36 @@ function createConversationInterface(container, instruction) {
         }
     }
 
+    // Track if this is the first request
+    let isFirstRequest = true;
+    
     // Add click handler to the next button
     nextButton.addEventListener('click', () => {
         console.log('=== Next button clicked ===');
-        makeApiRequest();
+        console.log('Is first request:', isFirstRequest);
+        
+        // Only call update_screenshot after the initial request
+        makeApiRequest(isFirstRequest);
+        
+        // After first request, all subsequent requests should use update_screenshot
+        if (isFirstRequest) {
+            isFirstRequest = false;
+        }
     });
+
+    // Create button container for side-by-side layout
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'button-container';
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.gap = '10px';
+    buttonContainer.style.justifyContent = 'center';
+
+    buttonContainer.appendChild(nextButton);
+    buttonContainer.appendChild(conversationStatusButton);
 
     messageContainer.appendChild(messageText);
     conversationBox.appendChild(messageContainer);
-    conversationBox.appendChild(nextButton);
+    conversationBox.appendChild(buttonContainer);
 
     container.appendChild(conversationBox);
 
@@ -257,5 +453,5 @@ function createConversationInterface(container, instruction) {
 
     // Automatically trigger the API request when the interface is created
     console.log('Conversation interface created, triggering initial API request...');
-    makeApiRequest();
+    makeApiRequest(true);  // true for initial request
 }

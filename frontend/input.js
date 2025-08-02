@@ -31,7 +31,7 @@ const floatingBox = createFloatingBox(async (instruction) => {
     } catch (err) {
         console.error('Error sending request:', err);
     }
-}, 300, 60);  // Smaller dimensions for compact input
+}, 350, 60);  // Increased width for Status button
 
 // Add floating box to input container
 const inputContainer = document.getElementById('input-container');
