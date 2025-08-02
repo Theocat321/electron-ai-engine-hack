@@ -15,7 +15,9 @@ function renderHotspot(x, y) {
     // When clicking hotspot, log the click
     div.addEventListener('click', (e) => {
         e.stopPropagation(); // Avoid event bubbling
-        window.electronAPI.sendClick({ type: 'click', x: e.clientX, y: e.clientY });
+        const coords = { type: 'click', x: e.clientX, y: e.clientY };
+        console.log('Hotspot click at', coords);
+        window.electronAPI.sendClick(coords);
     });
 
     overlay.appendChild(div);
@@ -27,7 +29,9 @@ renderHotspot(600, 500);
 
 // Capture all click events anywhere
 overlay.addEventListener('click', (e) => {
-    window.electronAPI.sendClick({ type: 'click', x: e.clientX, y: e.clientY });
+    const coords = { type: 'click', x: e.clientX, y: e.clientY };
+    console.log('Screen click at', coords);
+    window.electronAPI.sendClick(coords);
 });
 
 // Example: Send screenshot to backend
