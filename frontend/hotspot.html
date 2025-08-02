@@ -17,14 +17,22 @@
         #hotspot {
             width: 40px;
             height: 40px;
-            background: rgba(255, 0, 0, 0.7);
+            background: rgba(255, 0, 0, 0.9);
             border-radius: 50%;
             cursor: pointer;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 3px solid rgba(255, 255, 255, 0.8);
             transition: all 0.2s ease;
             position: absolute;
             top: 10px;
             left: 10px;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.8), 0 0 30px rgba(255, 0, 0, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
         }
 
         #hotspot:hover {
@@ -43,20 +51,41 @@
 <body>
     <div id="hotspot"></div>
     <script>
+        console.log('Hotspot window loaded');
+        
         const el = document.getElementById('hotspot');
+        console.log('Hotspot element found:', !!el);
+        
+        // Listen for position updates from main process
+        if (window.electronAPI && window.electronAPI.onPositionUpdate) {
+            console.log('Setting up position update listener...');
+            window.electronAPI.onPositionUpdate((position) => {
+                console.log('Hotspot received position update:', position);
+            });
+        } else {
+            console.error('electronAPI or onPositionUpdate not available');
+        }
+        
         el.addEventListener('click', () => {
+            console.log('Hotspot clicked!');
             // Calculate the center of this 60×60 window
             const { x, y } = window.screen; // absolute window position
             const cx = x + 30, cy = y + 30;
+            console.log('Performing click at:', { x: cx, y: cy });
             window.electronAPI.performClick({ x: cx, y: cy });
         });
+        
         // If you want to drag it around:
         el.addEventListener('mousedown', () => {
+            console.log('Hotspot mousedown - enabling click');
             window.electronAPI.enableClick();   // let the user drag
         });
         el.addEventListener('mouseup', () => {
+            console.log('Hotspot mouseup - disabling click');
             window.electronAPI.disableClick();  // go back to click‐through
         });
+        
+        console.log('Hotspot event listeners attached');
     </script>
 </body>
 

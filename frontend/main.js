@@ -13,7 +13,11 @@ app.whenReady().then(() => {
     mainWindow = new BrowserWindow({
         transparent: true, frame: false, fullscreen: true,
         alwaysOnTop: true, skipTaskbar: true, focusable: false,
-        webPreferences: { preload: path.join(__dirname, 'preload.js') }
+        webPreferences: { 
+            preload: path.join(__dirname, 'preload.js'),
+            webSecurity: false,
+            allowRunningInsecureContent: true
+        }
     });
     mainWindow.loadFile('index.html');
     mainWindow.once('ready-to-show', () => {
@@ -24,7 +28,12 @@ app.whenReady().then(() => {
     hotspotWindow = new BrowserWindow({
         width: 60, height: 60, transparent: true, frame: false,
         alwaysOnTop: true, skipTaskbar: true, focusable: true, show: false,
-        webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true }
+        webPreferences: { 
+            preload: path.join(__dirname, 'preload.js'), 
+            contextIsolation: true,
+            webSecurity: false,
+            allowRunningInsecureContent: true
+        }
     });
     hotspotWindow.loadFile(path.join(__dirname, 'hotspot.html'));
 
@@ -44,7 +53,9 @@ app.whenReady().then(() => {
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
-            contextIsolation: true
+            contextIsolation: true,
+            webSecurity: false,
+            allowRunningInsecureContent: true
         }
     });
     inputWindow.loadFile(path.join(__dirname, 'input.html'));
@@ -79,10 +90,29 @@ ipcMain.handle('get-screenshot', async () => {
 });
 
 ipcMain.on('send-to-main-window', (_, data) => {
+    console.log('=== Main window received message ===');
+    console.log('Message data:', data);
+    
     if (data.type === 'create-hotspot') {
+        console.log('Creating hotspot...');
+        console.log('Hotspot window exists:', !!hotspotWindow);
+        console.log('Coordinates received:', data.coords);
+        
         const { x, y } = data.coords;
-        hotspotWindow?.setPosition(x - 30, y - 30);
+        const windowX = x - 30;
+        const windowY = y - 30;
+        
+        console.log('Setting hotspot window position to:', { x: windowX, y: windowY });
+        hotspotWindow?.setPosition(windowX, windowY);
+        
+        console.log('Showing hotspot window...');
         hotspotWindow?.show();
+        
+        console.log('Sending position update to hotspot window...');
         hotspotWindow?.webContents.send('position-update', data.coords);
+        
+        console.log('Hotspot creation complete');
+    } else {
+        console.log('Unknown message type:', data.type);
     }
 });

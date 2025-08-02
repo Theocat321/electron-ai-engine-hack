@@ -69,6 +69,8 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
 
 // Helper function to create the conversation interface
 function createConversationInterface(container) {
+    console.log('Creating conversation interface...');
+    
     const conversationBox = document.createElement('div');
     conversationBox.className = 'conversation-box';
 
@@ -77,30 +79,118 @@ function createConversationInterface(container) {
 
     const messageText = document.createElement('p');
     messageText.className = 'message-text';
-    messageText.textContent = 'First, click on the Gmail icon in your navbar';
+    messageText.textContent = 'Processing your request...';
 
     const nextButton = document.createElement('button');
     nextButton.className = 'next-button';
-    nextButton.textContent = 'Next';
+    nextButton.textContent = 'Loading...';
+    nextButton.disabled = true;
     nextButton.setAttribute('data-no-drag', 'true');
+
+    // Function to show loading state
+    function showLoading() {
+        console.log('Showing loading state...');
+        nextButton.disabled = true;
+        nextButton.textContent = 'Loading...';
+        messageText.textContent = 'Processing your request...';
+        console.log('Loading state applied');
+    }
+
+    // Function to hide loading state
+    function hideLoading() {
+        console.log('Hiding loading state...');
+        nextButton.disabled = false;
+        nextButton.textContent = 'Next';
+        console.log('Loading state removed');
+    }
+
+    // Function to make API request
+    async function makeApiRequest() {
+        console.log('=== Starting API Request ===');
+        try {
+            showLoading();
+            
+            console.log('Making fetch request to https://ai-hack.free.beeceptor.com/');
+            const response = await fetch('https://ai-hack.free.beeceptor.com/');
+            
+            console.log('Response received:', { status: response.status, ok: response.ok });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            console.log('Parsing JSON response...');
+            const data = await response.json();
+            console.log('API Response data:', data);
+            
+            // Update the message text with the response
+            console.log('Updating message text to:', data.text);
+            messageText.textContent = data.text;
+            
+            // Create hotspot using the coordinates from the response
+            console.log('Checking for electronAPI and coords...');
+            console.log('window.electronAPI exists:', !!window.electronAPI);
+            console.log('data.coords exists:', !!data.coords);
+            console.log('data.coords value:', data.coords);
+            
+            if (window.electronAPI && data.coords) {
+                console.log('Sending hotspot creation request to main window...');
+                const hotspotData = {
+                    type: 'create-hotspot',
+                    coords: data.coords,
+                    label: data.text,
+                    action: 'click'
+                };
+                console.log('Hotspot data being sent:', hotspotData);
+                
+                window.electronAPI.sendToMainWindow(hotspotData);
+                console.log('Hotspot creation request sent successfully');
+            } else {
+                console.error('Cannot create hotspot - missing electronAPI or coords');
+                console.log('electronAPI available:', !!window.electronAPI);
+                console.log('coords available:', !!data.coords);
+            }
+            
+        } catch (error) {
+            console.error('Error making API request:', error);
+            console.error('Error details:', {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+            });
+            
+            // Fallback to mock data for testing
+            console.log('Using fallback mock data...');
+            const mockData = {
+                text: "Awesome! (Mock Data)",
+                coords: { x: 400, y: 400 }
+            };
+            
+            messageText.textContent = mockData.text;
+            
+            if (window.electronAPI && mockData.coords) {
+                console.log('Creating hotspot with mock data...');
+                const hotspotData = {
+                    type: 'create-hotspot',
+                    coords: mockData.coords,
+                    label: mockData.text,
+                    action: 'click'
+                };
+                console.log('Mock hotspot data being sent:', hotspotData);
+                
+                window.electronAPI.sendToMainWindow(hotspotData);
+                console.log('Mock hotspot creation request sent successfully');
+            }
+        } finally {
+            hideLoading();
+            console.log('=== API Request Complete ===');
+        }
+    }
 
     // Add click handler to the next button
     nextButton.addEventListener('click', () => {
-        console.log('Next button clicked');
-
-        // Here you would typically fetch the next step from your backend
-        // For now, just update the message
-        messageText.textContent = 'Now, click on "Compose" to start a new email';
-
-        // You could also send a message to the main window to create hotspots
-        if (window.electronAPI) {
-            window.electronAPI.sendToMainWindow({
-                type: 'create-hotspot',
-                coords: { x: 500, y: 300 },
-                label: 'Click "Compose"',
-                action: 'click'
-            });
-        }
+        console.log('=== Next button clicked ===');
+        makeApiRequest();
     });
 
     messageContainer.appendChild(messageText);
@@ -108,4 +198,8 @@ function createConversationInterface(container) {
     conversationBox.appendChild(nextButton);
 
     container.appendChild(conversationBox);
+    
+    // Automatically trigger the API request when the interface is created
+    console.log('Conversation interface created, triggering initial API request...');
+    makeApiRequest();
 }
