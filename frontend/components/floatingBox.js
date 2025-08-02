@@ -1,6 +1,8 @@
-export function createFloatingBox(sendCallback) {
+export function createFloatingBox(sendCallback, width = 300, height = 50) {
     const box = document.createElement('div');
     box.className = 'floating-box';
+    box.style.width = `${width}px`;
+    box.style.height = `${height}px`;
 
     const textarea = document.createElement('textarea');
     textarea.placeholder = 'Enter instructions';
