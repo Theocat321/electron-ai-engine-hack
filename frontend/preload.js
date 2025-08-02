@@ -1,16 +1,16 @@
+// preload.js
 const { contextBridge, ipcRenderer } = require('electron');
 
-// Expose protected methods that allow the renderer process to use
-// the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld('electronAPI', {
     sendToMainWindow: (data) => ipcRenderer.send('send-to-main-window', data),
     getScreenshot: () => ipcRenderer.invoke('get-screenshot'),
+    hotspotClick: (position) => ipcRenderer.send('hotspot-click', position),
+    hideHotspot: () => ipcRenderer.send('hide-hotspot'),
+    onPositionUpdate: (cb) => ipcRenderer.on('position-update', (_e, pos) => cb(pos)),
     enableClick: () => ipcRenderer.send('enable-click'),
     disableClick: () => ipcRenderer.send('disable-click'),
-    onMainWindowMessage: (callback) => {
-        ipcRenderer.on('main-window-message', (event, data) => callback(data));
-    }
+    moveHotspot: (pos) => ipcRenderer.send('move-hotspot', pos),
+    performSystemClick: (coords) => ipcRenderer.send('perform-system-click', coords),
 });
 
-// For debugging
 console.log('Preload script executed');
