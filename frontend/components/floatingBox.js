@@ -54,7 +54,7 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
         }
     });
 
-        // Enable Enter key to submit
+    // Enable Enter key to submit
     textarea.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -85,7 +85,7 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
 // Helper function to create the conversation interface
 function createConversationInterface(container, instruction) {
     console.log('Creating conversation interface...');
-    
+
     const conversationBox = document.createElement('div');
     conversationBox.className = 'conversation-box';
 
@@ -102,16 +102,40 @@ function createConversationInterface(container, instruction) {
     nextButton.disabled = true;
     nextButton.setAttribute('data-no-drag', 'true');
 
+    // Function to calculate and update window size based on content
+    function updateWindowSize() {
+        // Calculate the required height based on the content
+        const messageHeight = messageText.scrollHeight;
+        const buttonHeight = 50; // Approximate button height
+        const padding = 60; // Total padding (30px top + 30px bottom)
+        const minHeight = 120; // Minimum window height
+
+        const requiredHeight = Math.max(minHeight, messageHeight + buttonHeight + padding);
+
+        console.log('Updating window size:', {
+            messageHeight,
+            buttonHeight,
+            padding,
+            requiredHeight
+        });
+
+        // Send resize request to main process
+        if (window.electronAPI && window.electronAPI.resizeInputWindow) {
+            window.electronAPI.resizeInputWindow(300, requiredHeight);
+        }
+    }
+
     // Function to show loading state
     function showLoading() {
         console.log('Showing loading state...');
         nextButton.disabled = true;
         nextButton.textContent = 'Loading...';
         messageText.textContent = 'Processing your request...';
+        updateWindowSize();
         console.log('Loading state applied');
     }
 
-    // Function to hide loading state
+    // Function to hide loading state  
     function hideLoading() {
         console.log('Hiding loading state...');
         nextButton.disabled = false;
@@ -124,11 +148,11 @@ function createConversationInterface(container, instruction) {
         console.log('=== Starting API Request ===');
         try {
             showLoading();
-            
+
             // Capture screenshot and save it
             console.log('Capturing screenshot...');
             const screenshotBase64 = await window.electronAPI.getScreenshot();
-            
+
             // Convert base64 to blob
             const byteCharacters = atob(screenshotBase64);
             const byteNumbers = new Array(byteCharacters.length);
@@ -137,40 +161,45 @@ function createConversationInterface(container, instruction) {
             }
             const byteArray = new Uint8Array(byteNumbers);
             const blob = new Blob([byteArray], { type: 'image/png' });
-            
+
             // Create FormData with image and query
             const formData = new FormData();
             formData.append('image_path', blob, 'img.png');
             formData.append('query', instruction);
-            
+
             console.log('Making fetch request to http://localhost:8000/run');
             console.log('Query:', instruction);
-            
+
             const response = await fetch('http://localhost:8000/run', {
                 method: 'POST',
                 body: formData
             });
-            
+
             console.log('Response received:', { status: response.status, ok: response.ok });
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             console.log('Parsing JSON response...');
             const data = await response.json();
             console.log('API Response data:', data);
-            
+
             // Update the message text with the response
             console.log('Updating message text to:', data.text || data.message || 'Request completed');
             messageText.textContent = data.text || data.message || 'Request completed';
-            
+
+            // Update window size after text content changes
+            setTimeout(() => {
+                updateWindowSize();
+            }, 100); // Small delay to ensure text is rendered
+
             // Create hotspot using the coordinates from the response
             console.log('Checking for electronAPI and coords...');
             console.log('window.electronAPI exists:', !!window.electronAPI);
             console.log('data.coords exists:', !!data.coords);
             console.log('data.coords value:', data.coords);
-            
+
             if (window.electronAPI && data.coords) {
                 console.log('Sending hotspot creation request to main window...');
                 const hotspotData = {
@@ -180,7 +209,7 @@ function createConversationInterface(container, instruction) {
                     action: 'click'
                 };
                 console.log('Hotspot data being sent:', hotspotData);
-                
+
                 window.electronAPI.sendToMainWindow(hotspotData);
                 console.log('Hotspot creation request sent successfully');
             } else {
@@ -188,7 +217,7 @@ function createConversationInterface(container, instruction) {
                 console.log('electronAPI available:', !!window.electronAPI);
                 console.log('coords available:', !!data.coords);
             }
-            
+
         } catch (error) {
             console.error('Error making API request:', error);
             console.error('Error details:', {
@@ -196,8 +225,13 @@ function createConversationInterface(container, instruction) {
                 message: error.message,
                 stack: error.stack
             });
-            
+
             messageText.textContent = 'Sorry, there was an error processing your request.';
+
+            // Update window size after error message
+            setTimeout(() => {
+                updateWindowSize();
+            }, 100);
         } finally {
             hideLoading();
             console.log('=== API Request Complete ===');
@@ -215,7 +249,12 @@ function createConversationInterface(container, instruction) {
     conversationBox.appendChild(nextButton);
 
     container.appendChild(conversationBox);
-    
+
+    // Initial window size adjustment
+    setTimeout(() => {
+        updateWindowSize();
+    }, 100);
+
     // Automatically trigger the API request when the interface is created
     console.log('Conversation interface created, triggering initial API request...');
     makeApiRequest();
