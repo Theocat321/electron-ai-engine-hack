@@ -18,9 +18,6 @@ app.whenReady().then(() => {
     });
 
     mainWindow.loadFile('index.html');
-
-    // Start in click-through mode
-    mainWindow.setIgnoreMouseEvents(true, { forward: true });
 });
 
 // Handle screenshot request
