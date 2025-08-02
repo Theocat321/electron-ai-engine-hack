@@ -34,4 +34,9 @@ const floatingBox = createFloatingBox(async (instruction, outputEl) => {
 
 // Add floating box to input container
 const inputContainer = document.getElementById('input-container');
-inputContainer.appendChild(floatingBox); 
+if (inputContainer) {
+    inputContainer.appendChild(floatingBox);
+    console.log("FloatingBox added to container successfully");
+} else {
+    console.error("input-container not found!");
+} 

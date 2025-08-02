@@ -56,12 +56,17 @@ app.whenReady().then(() => {
         }
     });
 
-    // Try loading a simple test content first
-    inputWindow.loadURL('data:text/html,<html><body style="background:red;color:white;font-size:20px;padding:20px;">INPUT WINDOW TEST</body></html>');
+    // Load the actual input.html file
+    inputWindow.loadFile(path.join(__dirname, 'input.html'));
 
     // Handle loading errors
     inputWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
         console.error('Input window failed to load:', errorCode, errorDescription);
+    });
+
+    // Handle console messages from input window
+    inputWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+        console.log(`Input window console [${level}]: ${message} at ${sourceId}:${line}`);
     });
 
     // Show input window after content is loaded
