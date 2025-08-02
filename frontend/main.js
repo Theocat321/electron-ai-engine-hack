@@ -2,7 +2,6 @@
 const { log } = require('console');
 const { app, BrowserWindow, ipcMain, desktopCapturer } = require('electron');
 const path = require('path');
-const robot = require('robotjs');
 const fs = require('fs');
 
 app.disableHardwareAcceleration();
