@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "electron-log": "^5.4.2",
-    "node-fetch": "^3.3.2",
-    "robotjs": "^0.6.0"
+    "node-fetch": "^3.3.2"
   }
 }
