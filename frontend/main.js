@@ -44,3 +44,11 @@ ipcMain.on('click-event', (event, coords) => {
         body: JSON.stringify(coords)
     }).catch(err => console.error(err));
 });
+
+ipcMain.on('enable-click', () => {
+    mainWindow.setIgnoreMouseEvents(false);
+});
+
+ipcMain.on('disable-click', () => {
+    mainWindow.setIgnoreMouseEvents(true, { forward: true });
+});

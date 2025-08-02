@@ -1,23 +1,22 @@
 const overlay = document.getElementById('overlay');
 
-// Example: Render hotspot dynamically
 function renderHotspot(x, y) {
     const div = document.createElement('div');
     div.className = 'hotspot';
     div.style.left = `${x}px`;
     div.style.top = `${y}px`;
 
-    // When hovering over hotspot, disable click-through so it can capture click
     div.addEventListener('mouseenter', () => {
-        window.electronAPI.sendClick({ type: 'hover', x, y });
+        window.electronAPI.enableClick();
     });
 
-    // When clicking hotspot, log the click
+    div.addEventListener('mouseleave', () => {
+        window.electronAPI.disableClick();
+    });
+
     div.addEventListener('click', (e) => {
-        e.stopPropagation(); // Avoid event bubbling
-        const coords = { type: 'click', x: e.clientX, y: e.clientY };
-        console.log('Hotspot click at', coords);
-        window.electronAPI.sendClick(coords);
+        e.stopPropagation();
+        window.electronAPI.sendClick({ type: 'hotspot', x: e.clientX, y: e.clientY });
     });
 
     overlay.appendChild(div);
