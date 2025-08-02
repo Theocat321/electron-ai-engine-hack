@@ -38,10 +38,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
         console.log('Preload: Performing system click at:', coords);
         ipcRenderer.send('perform-system-click', coords);
     },
-    resizeInputWindow: (width, height) => {
-        console.log('Preload: Resizing input window to:', { width, height });
-        ipcRenderer.send('resize-input-window', { width, height });
-    },
+    log: (message) => ipcRenderer.send('renderer-log', message),
+    callBackend: (data) => ipcRenderer.invoke('call-backend', data),
+
 });
 
 console.log('Preload script executed');

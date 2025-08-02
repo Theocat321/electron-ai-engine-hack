@@ -1,8 +1,11 @@
 // main.js
-const { app, BrowserWindow, ipcMain, desktopCapturer, systemPreferences, screen } = require('electron');
+const { log } = require('console');
+const { app, BrowserWindow, ipcMain, desktopCapturer } = require('electron');
 const path = require('path');
 const robot = require('robotjs');
 const fs = require('fs');
+
+app.disableHardwareAcceleration();
 
 let mainWindow, inputWindow, hotspotWindow;
 
@@ -16,6 +19,8 @@ app.whenReady().then(() => {
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             webSecurity: false,
+            nodeIntegration: false,
+            contextIsolation: true,
             allowRunningInsecureContent: true
         }
     });
@@ -187,5 +192,31 @@ ipcMain.on('send-to-main-window', (_, data) => {
         console.log('Hotspot creation complete');
     } else {
         console.log('Unknown message type:', data.type);
+    }
+});
+
+ipcMain.on('renderer-log', (event, message) => {
+    console.log('[Renderer]', message);
+});
+
+
+ipcMain.handle('call-backend', async (event, { screenshotBase64, userQuery }) => {
+    try {
+        const response = await fetch('http://127.0.0.1:8000/initialize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                screenshot_base64: screenshotBase64,
+                user_query: userQuery
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Backend error: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (err) {
+        return { error: err.message };
     }
 });
