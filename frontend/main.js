@@ -40,7 +40,7 @@ app.whenReady().then(() => {
     console.log('Creating input window...');
     inputWindow = new BrowserWindow({
         transparent: true,
-        frame: false,
+        frame: false, // Make sure this is false for custom window chrome
         width: 400,
         height: 150,
         x: 100,
@@ -50,9 +50,11 @@ app.whenReady().then(() => {
         focusable: true,
         resizable: false,
         show: false,
-        backgroundColor: '#ff000080',
+        backgroundColor: 'rgba(200, 200, 200, 0.5)',
         webPreferences: {
-            preload: path.join(__dirname, 'preload.js')
+            preload: path.join(__dirname, 'preload.js'),
+            nodeIntegration: false,
+            contextIsolation: true
         }
     });
 
@@ -75,6 +77,9 @@ app.whenReady().then(() => {
         inputWindow.setAlwaysOnTop(true, 'screen-saver');
         inputWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
         console.log('Input window should be visible now');
+
+        // Comment out or remove this line to prevent DevTools from opening automatically
+        // inputWindow.webContents.openDevTools({ mode: 'detach' });
     });
 
     // Handle input window focus
