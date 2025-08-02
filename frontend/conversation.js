@@ -31,11 +31,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Get the instruction from localStorage (set by the input window)
             const instruction = localStorage.getItem('currentInstruction') || "How do I send an email?";
-            
+
             // Capture screenshot and save it
             console.log('Capturing screenshot...');
             const screenshotBase64 = await window.electronAPI.getScreenshot();
-            
+
             // Convert base64 to blob
             const byteCharacters = atob(screenshotBase64);
             const byteNumbers = new Array(byteCharacters.length);
@@ -44,16 +44,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const byteArray = new Uint8Array(byteNumbers);
             const blob = new Blob([byteArray], { type: 'image/png' });
-            
+
             // Create FormData with image and query
             const formData = new FormData();
             formData.append('image_path', blob, 'img.png');
             formData.append('query', instruction);
-            
-            console.log('Making fetch request to http://localhost:8000/run');
+
+            console.log('Making fetch request to http://localhost:8000/initialize');
             console.log('Query:', instruction);
-            
-            const response = await fetch('http://localhost:8000/run', {
+
+            const response = await fetch('http://localhost:8000/initialize', {
                 method: 'POST',
                 body: formData
             });

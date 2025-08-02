@@ -1,10 +1,12 @@
 // main.js
+const { log } = require('console');
 const { app, BrowserWindow, ipcMain, desktopCapturer } = require('electron');
 const path = require('path');
 const robot = require('robotjs');
 
-let mainWindow, inputWindow, hotspotWindow;
+app.disableHardwareAcceleration();
 
+let mainWindow, inputWindow, hotspotWindow;
 
 app.disableHardwareAcceleration();
 
@@ -13,9 +15,11 @@ app.whenReady().then(() => {
     mainWindow = new BrowserWindow({
         transparent: true, frame: false, fullscreen: true,
         alwaysOnTop: true, skipTaskbar: true, focusable: false,
-        webPreferences: { 
+        webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             webSecurity: false,
+            nodeIntegration: false,
+            contextIsolation: true,
             allowRunningInsecureContent: true
         }
     });
@@ -28,8 +32,8 @@ app.whenReady().then(() => {
     hotspotWindow = new BrowserWindow({
         width: 60, height: 60, transparent: true, frame: false,
         alwaysOnTop: true, skipTaskbar: true, focusable: true, show: false,
-        webPreferences: { 
-            preload: path.join(__dirname, 'preload.js'), 
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
             webSecurity: false,
             allowRunningInsecureContent: true
@@ -107,27 +111,53 @@ ipcMain.handle('get-screenshot', async () => {
 ipcMain.on('send-to-main-window', (_, data) => {
     console.log('=== Main window received message ===');
     console.log('Message data:', data);
-    
+
     if (data.type === 'create-hotspot') {
         console.log('Creating hotspot...');
         console.log('Hotspot window exists:', !!hotspotWindow);
         console.log('Coordinates received:', data.coords);
-        
+
         const { x, y } = data.coords;
         const windowX = x - 30;
         const windowY = y - 30;
-        
+
         console.log('Setting hotspot window position to:', { x: windowX, y: windowY });
         hotspotWindow?.setPosition(windowX, windowY);
-        
+
         console.log('Showing hotspot window...');
         hotspotWindow?.show();
-        
+
         console.log('Sending position update to hotspot window...');
         hotspotWindow?.webContents.send('position-update', data.coords);
-        
+
         console.log('Hotspot creation complete');
     } else {
         console.log('Unknown message type:', data.type);
+    }
+});
+
+ipcMain.on('renderer-log', (event, message) => {
+    console.log('[Renderer]', message);
+});
+
+
+ipcMain.handle('call-backend', async (event, { screenshotBase64, userQuery }) => {
+    try {
+        const response = await fetch('http://127.0.0.1:8000/initialize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                screenshot_base64: screenshotBase64,
+                user_query: userQuery
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Backend error: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (err) {
+        return { error: err.message };
     }
 });

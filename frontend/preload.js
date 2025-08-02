@@ -38,6 +38,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         console.log('Preload: Performing system click at:', coords);
         ipcRenderer.send('perform-system-click', coords);
     },
+    log: (message) => ipcRenderer.send('renderer-log', message),
+    callBackend: (data) => ipcRenderer.invoke('call-backend', data),
 });
 
 console.log('Preload script executed');
