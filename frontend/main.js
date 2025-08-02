@@ -73,7 +73,6 @@ app.whenReady().then(() => {
         focusable: true,
         resizable: false,
         show: false,
-        backgroundColor: 'rgba(200, 200, 200, 0.5)',
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
