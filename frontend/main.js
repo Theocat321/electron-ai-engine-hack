@@ -16,7 +16,6 @@ app.whenReady().then(() => {
             preload: path.join(__dirname, 'preload.js')
         }
     });
-
     mainWindow.loadFile('index.html');
 });
 

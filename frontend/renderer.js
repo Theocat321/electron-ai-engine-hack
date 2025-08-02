@@ -1,3 +1,5 @@
+import { renderLiquidComponent } from './Indicator.jsx';
+
 const overlay = document.getElementById('overlay');
 
 function renderHotspot(x, y) {
@@ -22,9 +24,8 @@ function renderHotspot(x, y) {
     overlay.appendChild(div);
 }
 
-// Example hotspot
-renderHotspot(300, 400);
-renderHotspot(600, 500);
+// Single liquid component on startup
+renderLiquidComponent(400, 300, 'large', 'circle');
 
 // Capture all click events anywhere
 overlay.addEventListener('click', (e) => {

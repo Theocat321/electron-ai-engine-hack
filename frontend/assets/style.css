@@ -23,3 +23,117 @@ body {
     border-radius: 50%;
     cursor: pointer;
 }
+
+/* Liquid Component Styles */
+.liquid-component {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    background: transparent;
+    border: 2px solid rgba(102, 126, 234, 0.6);
+    border-radius: 50%;
+    box-shadow:
+        0 0 20px rgba(102, 126, 234, 0.4),
+        0 0 40px rgba(102, 126, 234, 0.2);
+    animation: liquidFloat 3s ease-in-out infinite;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.liquid-component::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    animation: liquidShine 2s linear infinite;
+    pointer-events: none;
+}
+
+.liquid-component::after {
+    content: '';
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    width: 80%;
+    height: 80%;
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.liquid-component:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    box-shadow:
+        0 0 30px rgba(102, 126, 234, 0.8),
+        0 0 60px rgba(102, 126, 234, 0.4);
+    border-color: rgba(102, 126, 234, 0.9);
+}
+
+.liquid-component.circle {
+    border-radius: 50%;
+}
+
+.liquid-component.square {
+    border-radius: 20px;
+}
+
+.liquid-component.triangle {
+    border-radius: 0;
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+.liquid-component.hexagon {
+    border-radius: 0;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+.liquid-component.star {
+    border-radius: 0;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+@keyframes liquidFloat {
+
+    0%,
+    100% {
+        transform: translate(-50%, -50%) translateY(0px);
+    }
+
+    50% {
+        transform: translate(-50%, -50%) translateY(-10px);
+    }
+}
+
+@keyframes liquidShine {
+    0% {
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    }
+
+    100% {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+}
+
+/* Size variations */
+.liquid-component.small {
+    width: 40px;
+    height: 40px;
+}
+
+.liquid-component.medium {
+    width: 80px;
+    height: 80px;
+}
+
+.liquid-component.large {
+    width: 120px;
+    height: 120px;
+}
+
+.liquid-component.xlarge {
+    width: 160px;
+    height: 160px;
+}
