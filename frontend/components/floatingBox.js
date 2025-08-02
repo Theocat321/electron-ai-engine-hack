@@ -39,19 +39,22 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
             // Call the callback with the input value
             sendCallback(value);
 
+            // Store the instruction for the conversation interface
+            localStorage.setItem('currentInstruction', value);
+
             // Create and display the conversation element
             const container = document.getElementById('input-container');
             if (container) {
                 // Remove the input box
                 box.remove();
 
-                // Create conversation interface
-                createConversationInterface(container);
+                // Create conversation interface with the instruction
+                createConversationInterface(container, value);
             }
         }
     });
 
-    // Enable Enter key to submit
+        // Enable Enter key to submit
     textarea.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -60,14 +63,17 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
                 // Call the callback with the input value
                 sendCallback(value);
 
+                // Store the instruction for the conversation interface
+                localStorage.setItem('currentInstruction', value);
+
                 // Create and display the conversation element
                 const container = document.getElementById('input-container');
                 if (container) {
                     // Remove the input box
                     box.remove();
 
-                    // Create conversation interface
-                    createConversationInterface(container);
+                    // Create conversation interface with the instruction
+                    createConversationInterface(container, value);
                 }
             }
         }
@@ -77,7 +83,7 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
 }
 
 // Helper function to create the conversation interface
-function createConversationInterface(container) {
+function createConversationInterface(container, instruction) {
     console.log('Creating conversation interface...');
     
     const conversationBox = document.createElement('div');
@@ -119,8 +125,31 @@ function createConversationInterface(container) {
         try {
             showLoading();
             
-            console.log('Making fetch request to https://ai-hack.free.beeceptor.com/');
-            const response = await fetch('https://ai-hack.free.beeceptor.com/');
+            // Capture screenshot and save it
+            console.log('Capturing screenshot...');
+            const screenshotBase64 = await window.electronAPI.getScreenshot();
+            
+            // Convert base64 to blob
+            const byteCharacters = atob(screenshotBase64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: 'image/png' });
+            
+            // Create FormData with image and query
+            const formData = new FormData();
+            formData.append('image_path', blob, 'img.png');
+            formData.append('query', instruction);
+            
+            console.log('Making fetch request to http://localhost:8000/run');
+            console.log('Query:', instruction);
+            
+            const response = await fetch('http://localhost:8000/run', {
+                method: 'POST',
+                body: formData
+            });
             
             console.log('Response received:', { status: response.status, ok: response.ok });
             
@@ -133,8 +162,8 @@ function createConversationInterface(container) {
             console.log('API Response data:', data);
             
             // Update the message text with the response
-            console.log('Updating message text to:', data.text);
-            messageText.textContent = data.text;
+            console.log('Updating message text to:', data.text || data.message || 'Request completed');
+            messageText.textContent = data.text || data.message || 'Request completed';
             
             // Create hotspot using the coordinates from the response
             console.log('Checking for electronAPI and coords...');
@@ -147,7 +176,7 @@ function createConversationInterface(container) {
                 const hotspotData = {
                     type: 'create-hotspot',
                     coords: data.coords,
-                    label: data.text,
+                    label: data.text || data.message || 'Request completed',
                     action: 'click'
                 };
                 console.log('Hotspot data being sent:', hotspotData);
@@ -168,28 +197,7 @@ function createConversationInterface(container) {
                 stack: error.stack
             });
             
-            // Fallback to mock data for testing
-            console.log('Using fallback mock data...');
-            const mockData = {
-                text: "Awesome! (Mock Data)",
-                coords: { x: 400, y: 400 }
-            };
-            
-            messageText.textContent = mockData.text;
-            
-            if (window.electronAPI && mockData.coords) {
-                console.log('Creating hotspot with mock data...');
-                const hotspotData = {
-                    type: 'create-hotspot',
-                    coords: mockData.coords,
-                    label: mockData.text,
-                    action: 'click'
-                };
-                console.log('Mock hotspot data being sent:', hotspotData);
-                
-                window.electronAPI.sendToMainWindow(hotspotData);
-                console.log('Mock hotspot creation request sent successfully');
-            }
+            messageText.textContent = 'Sorry, there was an error processing your request.';
         } finally {
             hideLoading();
             console.log('=== API Request Complete ===');

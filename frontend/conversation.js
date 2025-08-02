@@ -28,40 +28,66 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('=== Starting API Request ===');
         try {
             showLoading();
+
+            // Get the instruction from localStorage (set by the input window)
+            const instruction = localStorage.getItem('currentInstruction') || "How do I send an email?";
             
-            console.log('Making fetch request to https://ai-hack.free.beeceptor.com/');
-            const response = await fetch('https://ai-hack.free.beeceptor.com/');
+            // Capture screenshot and save it
+            console.log('Capturing screenshot...');
+            const screenshotBase64 = await window.electronAPI.getScreenshot();
             
+            // Convert base64 to blob
+            const byteCharacters = atob(screenshotBase64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: 'image/png' });
+            
+            // Create FormData with image and query
+            const formData = new FormData();
+            formData.append('image_path', blob, 'img.png');
+            formData.append('query', instruction);
+            
+            console.log('Making fetch request to http://localhost:8000/run');
+            console.log('Query:', instruction);
+            
+            const response = await fetch('http://localhost:8000/run', {
+                method: 'POST',
+                body: formData
+            });
+
             console.log('Response received:', { status: response.status, ok: response.ok });
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             console.log('Parsing JSON response...');
             const data = await response.json();
             console.log('API Response data:', data);
-            
+
             // Update the message text with the response
-            console.log('Updating message text to:', data.text);
-            messageText.textContent = data.text;
-            
+            console.log('Updating message text to:', data.text || data.message || 'Request completed');
+            messageText.textContent = data.text || data.message || 'Request completed';
+
             // Create hotspot using the coordinates from the response
             console.log('Checking for electronAPI and coords...');
             console.log('window.electronAPI exists:', !!window.electronAPI);
             console.log('data.coords exists:', !!data.coords);
             console.log('data.coords value:', data.coords);
-            
+
             if (window.electronAPI && data.coords) {
                 console.log('Sending hotspot creation request to main window...');
                 const hotspotData = {
                     type: 'create-hotspot',
                     coords: data.coords,
-                    label: data.text,
+                    label: data.text || data.message || 'Request completed',
                     action: 'click'
                 };
                 console.log('Hotspot data being sent:', hotspotData);
-                
+
                 window.electronAPI.sendToMainWindow(hotspotData);
                 console.log('Hotspot creation request sent successfully');
             } else {
@@ -69,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('electronAPI available:', !!window.electronAPI);
                 console.log('coords available:', !!data.coords);
             }
-            
+
         } catch (error) {
             console.error('Error making API request:', error);
             messageText.textContent = 'Sorry, there was an error processing your request.';
