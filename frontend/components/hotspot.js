@@ -4,6 +4,7 @@ export function createHotspot(x, y, onClick) {
     div.style.left = `${x - 10}px`;
     div.style.top = `${y - 10}px`;
 
+
     // Store the position for reference
     div.dataset.positionX = x;
     div.dataset.positionY = y;

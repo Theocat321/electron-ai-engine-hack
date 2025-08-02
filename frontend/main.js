@@ -41,10 +41,10 @@ app.whenReady().then(() => {
     inputWindow = new BrowserWindow({
         transparent: true,
         frame: false, // Make sure this is false for custom window chrome
-        width: 400,
-        height: 150,
-        x: 100,
-        y: 100,
+        width: 300,   // Smaller width
+        height: 60,   // Smaller height
+        x: 50,
+        y: 50,
         alwaysOnTop: true,
         skipTaskbar: true,
         focusable: true,
@@ -57,6 +57,21 @@ app.whenReady().then(() => {
             webSecurity: false,
             allowRunningInsecureContent: true
         }
+    });
+
+    // Set custom CSP to allow Google Fonts and Material Icons
+    inputWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+        callback({
+            responseHeaders: {
+                ...details.responseHeaders,
+                'Content-Security-Policy': [
+                    "default-src 'self'; " +
+                    "script-src 'self'; " +
+                    "style-src 'self' https://fonts.googleapis.com; " +
+                    "font-src 'self' https://fonts.gstatic.com"
+                ]
+            }
+        });
     });
     inputWindow.loadFile(path.join(__dirname, 'input.html'));
     inputWindow.once('ready-to-show', () => {
