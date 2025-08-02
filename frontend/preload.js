@@ -40,6 +40,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
     log: (message) => ipcRenderer.send('renderer-log', message),
     callBackend: (data) => ipcRenderer.invoke('call-backend', data),
+
 });
 
 console.log('Preload script executed');

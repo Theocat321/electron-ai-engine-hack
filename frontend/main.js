@@ -3,6 +3,7 @@ const { log } = require('console');
 const { app, BrowserWindow, ipcMain, desktopCapturer } = require('electron');
 const path = require('path');
 const robot = require('robotjs');
+const fs = require('fs');
 
 app.disableHardwareAcceleration();
 
@@ -27,6 +28,8 @@ app.whenReady().then(() => {
     mainWindow.once('ready-to-show', () => {
         mainWindow.setIgnoreMouseEvents(true, { forward: true });
     });
+
+
 
     // -- Hotspot window --
     hotspotWindow = new BrowserWindow({
@@ -100,12 +103,68 @@ ipcMain.on('perform-system-click', (_, c) => {
     robot.mouseClick();
 });
 
+ipcMain.on('resize-input-window', (_, { width, height }) => {
+    console.log('Resizing input window to:', { width, height });
+    if (inputWindow) {
+        inputWindow.setSize(width, height);
+        // Optionally adjust position to keep window visible
+        const bounds = inputWindow.getBounds();
+        const display = screen.getPrimaryDisplay();
+        const screenWidth = display.workAreaSize.width;
+        const screenHeight = display.workAreaSize.height;
+
+        // Keep the window in the same relative position but ensure it's visible
+        const newX = Math.min(bounds.x, screenWidth - width);
+        const newY = Math.min(bounds.y, screenHeight - height);
+
+        inputWindow.setPosition(newX, newY);
+    }
+});
+
 ipcMain.handle('get-screenshot', async () => {
-    const sources = await desktopCapturer.getSources({
-        types: ['screen'],
-        thumbnailSize: { width: 1920, height: 1080 }
-    });
-    return sources[0].thumbnail.toPNG().toString('base64');
+    console.log('=== SCREENSHOT REQUEST RECEIVED ===');
+
+    try {
+        // Check if we have screen recording permission on macOS
+        if (process.platform === 'darwin') {
+            const { systemPreferences } = require('electron');
+            const hasPermission = systemPreferences.getMediaAccessStatus('screen');
+            console.log('macOS screen recording permission status:', hasPermission);
+
+            if (hasPermission !== 'granted') {
+                console.log('Requesting screen recording permission...');
+                await systemPreferences.askForMediaAccess('screen');
+            }
+        }
+
+        console.log('Getting desktop capturer sources...');
+        const sources = await desktopCapturer.getSources({
+            types: ['screen'],
+            thumbnailSize: { width: 1920, height: 1080 }
+        });
+
+        if (sources.length === 0) {
+            console.error('No screen sources found');
+            return null;
+        }
+        console.log(`Found ${sources.length} screen sources`);
+
+        console.log('Converting thumbnail to PNG buffer...');
+        const pngBuffer = sources[0].thumbnail.toPNG();
+        console.log(`PNG buffer created, size: ${pngBuffer.length} bytes`);
+
+        console.log('Converting to base64...');
+        const base64Data = pngBuffer.toString('base64');
+
+        console.log(`Screenshot captured: ${base64Data.length} chars`);
+        console.log('Returning base64 data from main process...');
+
+        return base64Data;
+    } catch (error) {
+        console.error('Error capturing screenshot:', error);
+        console.error('Error stack:', error.stack);
+        throw error;
+    }
 });
 
 ipcMain.on('send-to-main-window', (_, data) => {

@@ -123,6 +123,7 @@ function createConversationInterface(container, instruction) {
             if (window.electronAPI && data.x !== undefined && data.y !== undefined) {
                 window.electronAPI.log('[FloatingBox] Sending hotspot to main process...');
                 window.electronAPI.sendToMainWindow({
+
                     type: 'create-hotspot',
                     coords: { x: data.x, y: data.y },
                     label: data.task_description || 'Request completed',
@@ -133,6 +134,7 @@ function createConversationInterface(container, instruction) {
             window.electronAPI.log(`[FloatingBox] Error: ${error.message}`);
             window.electronAPI.log(`Stacktrace: ${error.stack}`);
             messageText.textContent = 'Error processing request.';
+
         } finally {
             hideLoading();
         }
@@ -140,4 +142,5 @@ function createConversationInterface(container, instruction) {
 
     nextButton.addEventListener('click', makeApiRequest);
     makeApiRequest(); // auto trigger
+();
 }
