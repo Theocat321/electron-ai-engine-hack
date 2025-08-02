@@ -12,7 +12,5 @@
     "electron": "^31.0.1",
     "electron-rebuild": "^3.2.9"
   },
-  "dependencies": {
-    "robotjs": "^0.6.0"
-  }
+  "dependencies": {}
 }

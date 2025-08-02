@@ -96,11 +96,35 @@ function createConversationInterface(container, instruction) {
     messageText.className = 'message-text';
     messageText.textContent = 'Processing your request...';
 
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'button-container';
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.gap = '10px';
+    buttonContainer.style.justifyContent = 'center';
+
     const nextButton = document.createElement('button');
     nextButton.className = 'next-button';
-    nextButton.textContent = 'Loading...';
-    nextButton.disabled = true;
+    nextButton.textContent = 'Start';
+    nextButton.disabled = false;
     nextButton.setAttribute('data-no-drag', 'true');
+
+    const resetButton = document.createElement('button');
+    resetButton.className = 'reset-button';
+    resetButton.textContent = 'Reset';
+    resetButton.setAttribute('data-no-drag', 'true');
+    resetButton.style.background = '#f44336';
+    resetButton.style.color = 'white';
+
+    const statusButton = document.createElement('button');
+    statusButton.className = 'status-button';
+    statusButton.textContent = 'Status';
+    statusButton.setAttribute('data-no-drag', 'true');
+    statusButton.style.background = '#2196F3';
+    statusButton.style.color = 'white';
+
+    // Track session state
+    let sessionInitialized = false;
+    let isSessionActive = false;
 
     // Function to show loading state
     function showLoading() {
@@ -115,108 +139,207 @@ function createConversationInterface(container, instruction) {
     function hideLoading() {
         console.log('Hiding loading state...');
         nextButton.disabled = false;
-        nextButton.textContent = 'Next';
+        nextButton.textContent = sessionInitialized ? 'Next' : 'Start';
         console.log('Loading state removed');
     }
 
-    // Function to make API request
-    async function makeApiRequest() {
-        console.log('=== Starting API Request ===');
-        try {
-            showLoading();
-            
-            // Capture screenshot and save it
-            console.log('Capturing screenshot...');
-            const screenshotBase64 = await window.electronAPI.getScreenshot();
-            
-            // Convert base64 to blob
-            const byteCharacters = atob(screenshotBase64);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: 'image/png' });
-            
-            // Create FormData with image and query
-            const formData = new FormData();
-            formData.append('image_path', blob, 'img.png');
-            formData.append('query', instruction);
-            
-            console.log('Making fetch request to http://localhost:8000/run');
-            console.log('Query:', instruction);
-            
-            const response = await fetch('http://localhost:8000/run', {
-                method: 'POST',
-                body: formData
-            });
-            
-            console.log('Response received:', { status: response.status, ok: response.ok });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            console.log('Parsing JSON response...');
-            const data = await response.json();
-            console.log('API Response data:', data);
-            
-            // Update the message text with the response
-            console.log('Updating message text to:', data.text || data.message || 'Request completed');
-            messageText.textContent = data.text || data.message || 'Request completed';
-            
-            // Create hotspot using the coordinates from the response
-            console.log('Checking for electronAPI and coords...');
-            console.log('window.electronAPI exists:', !!window.electronAPI);
-            console.log('data.coords exists:', !!data.coords);
-            console.log('data.coords value:', data.coords);
-            
-            if (window.electronAPI && data.coords) {
-                console.log('Sending hotspot creation request to main window...');
-                const hotspotData = {
-                    type: 'create-hotspot',
-                    coords: data.coords,
-                    label: data.text || data.message || 'Request completed',
-                    action: 'click'
-                };
-                console.log('Hotspot data being sent:', hotspotData);
-                
-                window.electronAPI.sendToMainWindow(hotspotData);
-                console.log('Hotspot creation request sent successfully');
-            } else {
-                console.error('Cannot create hotspot - missing electronAPI or coords');
-                console.log('electronAPI available:', !!window.electronAPI);
-                console.log('coords available:', !!data.coords);
-            }
-            
-        } catch (error) {
-            console.error('Error making API request:', error);
-            console.error('Error details:', {
-                name: error.name,
-                message: error.message,
-                stack: error.stack
-            });
-            
-            messageText.textContent = 'Sorry, there was an error processing your request.';
-        } finally {
-            hideLoading();
-            console.log('=== API Request Complete ===');
+    // Function to update button state based on completion status
+    function updateButtonState(isCompleted) {
+        if (isCompleted) {
+            nextButton.textContent = 'Task Complete';
+            nextButton.disabled = true;
+            nextButton.style.background = '#4CAF50';
+        } else {
+            nextButton.textContent = sessionInitialized ? 'Next' : 'Start';
+            nextButton.disabled = false;
+            nextButton.style.background = '';
         }
     }
 
-    // Add click handler to the next button
+    // Function to initialize session
+    async function initializeSession() {
+        console.log('=== Initializing Session ===');
+        try {
+            showLoading();
+            
+            // Import API service dynamically to avoid module loading issues
+            const { default: apiService } = await import('../services/api.js');
+            
+            // Capture screenshot
+            console.log('Capturing screenshot...');
+            const screenshotBase64 = await window.electronAPI.getScreenshot();
+            
+            console.log('Calling /initialize endpoint...');
+            console.log('Query:', instruction);
+            
+            const data = await apiService.initialize(instruction, screenshotBase64);
+            console.log('Initialize response:', data);
+
+            // Update UI with first task
+            messageText.textContent = data.task || 'Task received';
+            sessionInitialized = true;
+            isSessionActive = true;
+
+            // Create hotspot using coordinates from response
+            if (window.electronAPI && (data.x !== undefined && data.y !== undefined)) {
+                console.log('Creating hotspot at coordinates:', { x: data.x, y: data.y });
+                const hotspotData = {
+                    type: 'create-hotspot',
+                    coords: { x: data.x, y: data.y },
+                    label: data.task || 'Click here',
+                    action: 'click'
+                };
+                console.log('Hotspot data being sent:', hotspotData);
+
+                window.electronAPI.sendToMainWindow(hotspotData);
+                console.log('Hotspot creation request sent successfully');
+            }
+
+            // Update button state
+            updateButtonState(data.is_completed || false);
+
+        } catch (error) {
+            console.error('Error initializing session:', error);
+            messageText.textContent = 'Sorry, there was an error starting the session.';
+            sessionInitialized = false;
+            isSessionActive = false;
+        } finally {
+            hideLoading();
+            console.log('=== Session Initialization Complete ===');
+        }
+    }
+
+    // Function to update screenshot and get next task
+    async function updateScreenshot() {
+        console.log('=== Updating Screenshot ===');
+        try {
+            showLoading();
+            
+            // Import API service dynamically
+            const { default: apiService } = await import('../services/api.js');
+            
+            // Capture new screenshot
+            console.log('Capturing screenshot...');
+            const screenshotBase64 = await window.electronAPI.getScreenshot();
+            
+            console.log('Calling /update_screenshot endpoint...');
+            const data = await apiService.updateScreenshot(screenshotBase64);
+            console.log('Update response:', data);
+
+            // Update UI with next task
+            messageText.textContent = data.task || 'Task received';
+
+            // Create hotspot using coordinates from response
+            if (window.electronAPI && (data.x !== undefined && data.y !== undefined)) {
+                console.log('Creating hotspot at coordinates:', { x: data.x, y: data.y });
+                const hotspotData = {
+                    type: 'create-hotspot',
+                    coords: { x: data.x, y: data.y },
+                    label: data.task || 'Click here',
+                    action: 'click'
+                };
+                console.log('Hotspot data being sent:', hotspotData);
+
+                window.electronAPI.sendToMainWindow(hotspotData);
+                console.log('Hotspot creation request sent successfully');
+            }
+
+            // Update button state
+            updateButtonState(data.is_completed || false);
+
+        } catch (error) {
+            console.error('Error updating screenshot:', error);
+            messageText.textContent = 'Sorry, there was an error processing the next step.';
+        } finally {
+            hideLoading();
+            console.log('=== Screenshot Update Complete ===');
+        }
+    }
+
+    // Function to get session status
+    async function getStatus() {
+        console.log('=== Getting Status ===');
+        try {
+            // Import API service dynamically
+            const { default: apiService } = await import('../services/api.js');
+            
+            const status = await apiService.getStatus();
+            console.log('Status response:', status);
+            
+            if (status.status === 'No active session') {
+                messageText.textContent = 'No active session';
+                sessionInitialized = false;
+                isSessionActive = false;
+            } else {
+                messageText.textContent = `Active: ${status.current_task || 'No current task'}`;
+                sessionInitialized = true;
+                isSessionActive = true;
+            }
+            updateButtonState(false);
+        } catch (error) {
+            console.error('Error getting status:', error);
+            messageText.textContent = 'Error getting status';
+        }
+    }
+
+    // Function to reset session
+    async function resetSession() {
+        console.log('=== Resetting Session ===');
+        try {
+            // Import API service dynamically
+            const { default: apiService } = await import('../services/api.js');
+            
+            const result = await apiService.reset();
+            console.log('Reset response:', result);
+            
+            messageText.textContent = result.message || 'Session reset successfully';
+            sessionInitialized = false;
+            isSessionActive = false;
+            updateButtonState(false);
+            
+            // Hide hotspot
+            if (window.electronAPI) {
+                window.electronAPI.sendToMainWindow({ type: 'hide-hotspot' });
+            }
+        } catch (error) {
+            console.error('Error resetting session:', error);
+            messageText.textContent = 'Error resetting session';
+        }
+    }
+
+    // Function to handle next button click
+    async function handleNextClick() {
+        if (!sessionInitialized) {
+            await initializeSession();
+        } else if (isSessionActive) {
+            await updateScreenshot();
+        }
+    }
+
+    // Add event listeners
     nextButton.addEventListener('click', () => {
         console.log('=== Next button clicked ===');
-        makeApiRequest();
+        handleNextClick();
     });
 
+    resetButton.addEventListener('click', () => {
+        console.log('=== Reset button clicked ===');
+        resetSession();
+    });
+
+    statusButton.addEventListener('click', () => {
+        console.log('=== Status button clicked ===');
+        getStatus();
+    });
+
+    // Build UI
+    buttonContainer.appendChild(nextButton);
+    buttonContainer.appendChild(resetButton);
+    buttonContainer.appendChild(statusButton);
+    
     messageContainer.appendChild(messageText);
     conversationBox.appendChild(messageContainer);
-    conversationBox.appendChild(nextButton);
+    conversationBox.appendChild(buttonContainer);
 
     container.appendChild(conversationBox);
-    
-    // Automatically trigger the API request when the interface is created
-    console.log('Conversation interface created, triggering initial API request...');
-    makeApiRequest();
 }

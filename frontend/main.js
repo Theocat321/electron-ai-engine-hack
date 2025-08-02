@@ -1,7 +1,7 @@
 // main.js
 const { app, BrowserWindow, ipcMain, desktopCapturer } = require('electron');
 const path = require('path');
-const robot = require('robotjs');
+// const robot = require('robotjs'); // Temporarily disabled
 
 let mainWindow, inputWindow, hotspotWindow;
 
@@ -92,8 +92,9 @@ ipcMain.on('move-hotspot', (_, p) => {
 ipcMain.on('hide-hotspot', () => hotspotWindow?.hide());
 ipcMain.on('hotspot-click', (_, pos) => console.log('Hotspot clicked at', pos));
 ipcMain.on('perform-system-click', (_, c) => {
-    robot.moveMouse(c.x, c.y);
-    robot.mouseClick();
+    // robot.moveMouse(c.x, c.y);
+    // robot.mouseClick();
+    console.log('Would click at:', c.x, c.y);
 });
 
 ipcMain.handle('get-screenshot', async () => {
