@@ -7,6 +7,7 @@ let inputWindow; // Input window (interactive)
 app.disableHardwareAcceleration();
 
 app.whenReady().then(() => {
+    console.log('Creating main window (transparent overlay)...');
     // Create main overlay window (full screen, click-through)
     mainWindow = new BrowserWindow({
         transparent: true,
@@ -26,13 +27,35 @@ app.whenReady().then(() => {
 
     mainWindow.loadFile('index.html');
 
-    // Make main window completely click-through
-    mainWindow.setAlwaysOnTop(true, 'screen-saver');
-    mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-    mainWindow.setIgnoreMouseEvents(true, { forward: true });
+    // Log when main window is ready to show
+    mainWindow.once('ready-to-show', () => {
+        console.log('Main window is ready to show');
+    });
+
+    // Log when main window has finished loading
+    mainWindow.webContents.on('did-finish-load', () => {
+        console.log('Main window content loaded successfully');
+
+        // Make main window completely click-through after content is loaded
+        mainWindow.setAlwaysOnTop(true, 'screen-saver');
+        mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+        mainWindow.setIgnoreMouseEvents(true, { forward: true });
+        console.log('Main window set to click-through mode');
+    });
+
+    // Log any loading errors
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+        console.error('Main window failed to load:', errorCode, errorDescription);
+    });
+
+    // Handle console messages from main window
+    mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+        console.log(`Main window console [${level}]: ${message} at ${sourceId}:${line}`);
+    });
 
     // Prevent main window from being focused
     mainWindow.on('focus', () => {
+        console.log('Main window focused - blurring immediately');
         mainWindow.blur();
     });
 
@@ -109,17 +132,34 @@ ipcMain.on('click-event', (event, coords) => {
     console.log('User clicked at:', coords);
 });
 
+// Handle enable/disable click events with logging
 ipcMain.on('enable-click', () => {
-    mainWindow.setIgnoreMouseEvents(false);
+    console.log('Enabling click events on main window');
+    if (mainWindow) {
+        mainWindow.setIgnoreMouseEvents(false);
+        console.log('Main window is now interactive');
+    } else {
+        console.error('Cannot enable click: main window is not defined');
+    }
 });
 
 ipcMain.on('disable-click', () => {
-    mainWindow.setIgnoreMouseEvents(true, { forward: true });
+    console.log('Disabling click events on main window');
+    if (mainWindow) {
+        mainWindow.setIgnoreMouseEvents(true, { forward: true });
+        console.log('Main window is now click-through');
+    } else {
+        console.error('Cannot disable click: main window is not defined');
+    }
 });
 
 // Handle communication from input window to main window
 ipcMain.on('send-to-main-window', (event, data) => {
+    console.log('Received message for main window:', data);
     if (data.type === 'create-hotspot' && mainWindow) {
+        console.log('Forwarding hotspot creation to main window');
         mainWindow.webContents.send('main-window-message', data);
+    } else if (!mainWindow) {
+        console.error('Cannot send to main window: main window is not defined');
     }
 });
