@@ -38,7 +38,7 @@ body {
 .floating-box textarea {
     width: calc(100% - 16px);
     height: 50px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255);
     border: 1px solid rgba(102, 126, 234, 0.3);
     border-radius: 6px;
     color: rgba(255, 255, 255, 0.95);

@@ -30,10 +30,22 @@ app.whenReady().then(() => {
 
     // -- Input window --
     inputWindow = new BrowserWindow({
-        width: 400, height: 150, x: 100, y: 100, transparent: true, frame: false,
-        alwaysOnTop: true, skipTaskbar: true, focusable: true, show: false,
-        backgroundColor: 'rgba(200,200,200,0.5)',
-        webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true }
+        transparent: true,
+        frame: false, // Make sure this is false for custom window chrome
+        width: 400,
+        height: 150,
+        x: 100,
+        y: 100,
+        alwaysOnTop: true,
+        skipTaskbar: true,
+        focusable: true,
+        resizable: false,
+        show: false,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            nodeIntegration: false,
+            contextIsolation: true
+        }
     });
     inputWindow.loadFile(path.join(__dirname, 'input.html'));
     inputWindow.once('ready-to-show', () => {
