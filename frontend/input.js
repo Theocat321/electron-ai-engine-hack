@@ -40,4 +40,5 @@ if (inputContainer) {
     console.log("FloatingBox added to container successfully");
 } else {
     console.error("input-container not found!");
-} 
+}
+

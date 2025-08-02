@@ -14,9 +14,10 @@ body {
     width: 100vw;
     height: 100vh;
     pointer-events: none;
+    /* This makes the overlay click-through by default */
 }
 
-/* Updated hotspots with liquid glass aesthetic */
+
 .hotspot {
     position: absolute;
     width: 40px;

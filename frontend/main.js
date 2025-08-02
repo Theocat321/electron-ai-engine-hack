@@ -1,66 +1,43 @@
+// main.js
 const { app, BrowserWindow, ipcMain, desktopCapturer } = require('electron');
 const path = require('path');
+const robot = require('robotjs');
 
-let mainWindow; // Main overlay window (click-through)
-let inputWindow; // Input window (interactive)
+let mainWindow, inputWindow, hotspotWindow;
+
 
 app.disableHardwareAcceleration();
 
 app.whenReady().then(() => {
-    console.log('Creating main window (transparent overlay)...');
-    // Create main overlay window (full screen, click-through)
+    // -- Main overlay window --
     mainWindow = new BrowserWindow({
-        transparent: true,
-        frame: false,
-        width: 1920,
-        height: 1080,
-        x: 0,
-        y: 0,
-        alwaysOnTop: true,
-        skipTaskbar: true,
-        focusable: false,
-        resizable: false,
-        webPreferences: {
-            preload: path.join(__dirname, 'preload.js')
+        transparent: true, frame: false, fullscreen: true,
+        alwaysOnTop: true, skipTaskbar: true, focusable: false,
+        webPreferences: { 
+            preload: path.join(__dirname, 'preload.js'),
+            webSecurity: false,
+            allowRunningInsecureContent: true
         }
     });
-
     mainWindow.loadFile('index.html');
-
-    // Log when main window is ready to show
     mainWindow.once('ready-to-show', () => {
-        console.log('Main window is ready to show');
-    });
-
-    // Log when main window has finished loading
-    mainWindow.webContents.on('did-finish-load', () => {
-        console.log('Main window content loaded successfully');
-
-        // Make main window completely click-through after content is loaded
-        mainWindow.setAlwaysOnTop(true, 'screen-saver');
-        mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
         mainWindow.setIgnoreMouseEvents(true, { forward: true });
-        console.log('Main window set to click-through mode');
     });
 
-    // Log any loading errors
-    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-        console.error('Main window failed to load:', errorCode, errorDescription);
+    // -- Hotspot window --
+    hotspotWindow = new BrowserWindow({
+        width: 60, height: 60, transparent: true, frame: false,
+        alwaysOnTop: true, skipTaskbar: true, focusable: true, show: false,
+        webPreferences: { 
+            preload: path.join(__dirname, 'preload.js'), 
+            contextIsolation: true,
+            webSecurity: false,
+            allowRunningInsecureContent: true
+        }
     });
+    hotspotWindow.loadFile(path.join(__dirname, 'hotspot.html'));
 
-    // Handle console messages from main window
-    mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
-        console.log(`Main window console [${level}]: ${message} at ${sourceId}:${line}`);
-    });
-
-    // Prevent main window from being focused
-    mainWindow.on('focus', () => {
-        console.log('Main window focused - blurring immediately');
-        mainWindow.blur();
-    });
-
-    // Create input window (small, interactive)
-    console.log('Creating input window...');
+    // -- Input window --
     inputWindow = new BrowserWindow({
         transparent: true,
         frame: false, // Make sure this is false for custom window chrome
@@ -76,7 +53,9 @@ app.whenReady().then(() => {
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
-            contextIsolation: true
+            contextIsolation: true,
+            webSecurity: false,
+            allowRunningInsecureContent: true
         }
     });
 
@@ -94,86 +73,61 @@ app.whenReady().then(() => {
             }
         });
     });
-
-    // Load the actual input.html file
     inputWindow.loadFile(path.join(__dirname, 'input.html'));
-
-    // Handle loading errors
-    inputWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-        console.error('Input window failed to load:', errorCode, errorDescription);
-    });
-
-    // Handle console messages from input window
-    inputWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
-        console.log(`Input window console [${level}]: ${message} at ${sourceId}:${line}`);
-    });
-
-    // Show input window after content is loaded
     inputWindow.once('ready-to-show', () => {
         inputWindow.show();
         inputWindow.setAlwaysOnTop(true, 'screen-saver');
         inputWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-        console.log('Input window should be visible now');
-
-        // Comment out or remove this line to prevent DevTools from opening automatically
-        // inputWindow.webContents.openDevTools({ mode: 'detach' });
-    });
-
-    // Handle input window focus
-    inputWindow.on('focus', () => {
-        // Allow input window to be focused for interaction
-        console.log('Input window focused');
-    });
-
-    // Debug window visibility
-    inputWindow.on('show', () => {
-        console.log('Input window shown');
     });
 });
 
-// Handle screenshot request
+// -- IPC HANDLERS --
+ipcMain.on('enable-click', () => mainWindow?.setIgnoreMouseEvents(false));
+ipcMain.on('disable-click', () => mainWindow?.setIgnoreMouseEvents(true, { forward: true }));
+ipcMain.on('move-hotspot', (_, p) => {
+    hotspotWindow?.setPosition(p.x - 30, p.y - 30);
+    hotspotWindow?.show();
+    hotspotWindow?.webContents.send('position-update', p);
+});
+ipcMain.on('hide-hotspot', () => hotspotWindow?.hide());
+ipcMain.on('hotspot-click', (_, pos) => console.log('Hotspot clicked at', pos));
+ipcMain.on('perform-system-click', (_, c) => {
+    robot.moveMouse(c.x, c.y);
+    robot.mouseClick();
+});
+
 ipcMain.handle('get-screenshot', async () => {
     const sources = await desktopCapturer.getSources({
         types: ['screen'],
         thumbnailSize: { width: 1920, height: 1080 }
     });
-    const screen = sources[0]; // Primary screen
-    return screen.thumbnail.toPNG().toString('base64'); // Return base64 image
+    return sources[0].thumbnail.toPNG().toString('base64');
 });
 
-// Handle click logging
-ipcMain.on('click-event', (event, coords) => {
-    console.log('User clicked at:', coords);
-});
-
-// Handle enable/disable click events with logging
-ipcMain.on('enable-click', () => {
-    console.log('Enabling click events on main window');
-    if (mainWindow) {
-        mainWindow.setIgnoreMouseEvents(false);
-        console.log('Main window is now interactive');
+ipcMain.on('send-to-main-window', (_, data) => {
+    console.log('=== Main window received message ===');
+    console.log('Message data:', data);
+    
+    if (data.type === 'create-hotspot') {
+        console.log('Creating hotspot...');
+        console.log('Hotspot window exists:', !!hotspotWindow);
+        console.log('Coordinates received:', data.coords);
+        
+        const { x, y } = data.coords;
+        const windowX = x - 30;
+        const windowY = y - 30;
+        
+        console.log('Setting hotspot window position to:', { x: windowX, y: windowY });
+        hotspotWindow?.setPosition(windowX, windowY);
+        
+        console.log('Showing hotspot window...');
+        hotspotWindow?.show();
+        
+        console.log('Sending position update to hotspot window...');
+        hotspotWindow?.webContents.send('position-update', data.coords);
+        
+        console.log('Hotspot creation complete');
     } else {
-        console.error('Cannot enable click: main window is not defined');
-    }
-});
-
-ipcMain.on('disable-click', () => {
-    console.log('Disabling click events on main window');
-    if (mainWindow) {
-        mainWindow.setIgnoreMouseEvents(true, { forward: true });
-        console.log('Main window is now click-through');
-    } else {
-        console.error('Cannot disable click: main window is not defined');
-    }
-});
-
-// Handle communication from input window to main window
-ipcMain.on('send-to-main-window', (event, data) => {
-    console.log('Received message for main window:', data);
-    if (data.type === 'create-hotspot' && mainWindow) {
-        console.log('Forwarding hotspot creation to main window');
-        mainWindow.webContents.send('main-window-message', data);
-    } else if (!mainWindow) {
-        console.error('Cannot send to main window: main window is not defined');
+        console.log('Unknown message type:', data.type);
     }
 });
