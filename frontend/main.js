@@ -6,7 +6,7 @@ const fs = require('fs');
 
 app.disableHardwareAcceleration();
 
-let mainWindow, inputWindow, hotspotWindow;
+let mainWindow, inputWindow;
 
 app.disableHardwareAcceleration();
 
@@ -30,18 +30,7 @@ app.whenReady().then(() => {
 
 
 
-    // -- Hotspot window --
-    hotspotWindow = new BrowserWindow({
-        width: 60, height: 60, transparent: true, frame: false,
-        alwaysOnTop: true, skipTaskbar: true, focusable: true, show: false,
-        webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
-            contextIsolation: true,
-            webSecurity: false,
-            allowRunningInsecureContent: true
-        }
-    });
-    hotspotWindow.loadFile(path.join(__dirname, 'hotspot.html'));
+
 
     // -- Input window --
     inputWindow = new BrowserWindow({
@@ -91,11 +80,9 @@ app.whenReady().then(() => {
 ipcMain.on('enable-click', () => mainWindow?.setIgnoreMouseEvents(false));
 ipcMain.on('disable-click', () => mainWindow?.setIgnoreMouseEvents(true, { forward: true }));
 ipcMain.on('move-hotspot', (_, p) => {
-    hotspotWindow?.setPosition(p.x - 30, p.y - 30);
-    hotspotWindow?.show();
-    hotspotWindow?.webContents.send('position-update', p);
+    mainWindow?.webContents.send('show-hotspot', p);
 });
-ipcMain.on('hide-hotspot', () => hotspotWindow?.hide());
+ipcMain.on('hide-hotspot', () => mainWindow?.webContents.send('hide-hotspot'));
 ipcMain.on('hotspot-click', (_, pos) => console.log('Hotspot clicked at', pos));
 ipcMain.on('perform-system-click', (_, c) => {
     robot.moveMouse(c.x, c.y);
@@ -172,21 +159,10 @@ ipcMain.on('send-to-main-window', (_, data) => {
 
     if (data.type === 'create-hotspot') {
         console.log('Creating hotspot...');
-        console.log('Hotspot window exists:', !!hotspotWindow);
         console.log('Coordinates received:', data.coords);
 
-        const { x, y } = data.coords;
-        const windowX = x - 30;
-        const windowY = y - 30;
-
-        console.log('Setting hotspot window position to:', { x: windowX, y: windowY });
-        hotspotWindow?.setPosition(windowX, windowY);
-
-        console.log('Showing hotspot window...');
-        hotspotWindow?.show();
-
-        console.log('Sending position update to hotspot window...');
-        hotspotWindow?.webContents.send('position-update', data.coords);
+        console.log('Sending hotspot data to main window...');
+        mainWindow?.webContents.send('show-hotspot', data.coords);
 
         console.log('Hotspot creation complete');
     } else {

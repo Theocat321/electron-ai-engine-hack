@@ -15,11 +15,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
         console.log('Preload: Hiding hotspot');
         ipcRenderer.send('hide-hotspot');
     },
-    onPositionUpdate: (cb) => {
-        console.log('Preload: Setting up position update listener');
-        ipcRenderer.on('position-update', (_e, pos) => {
-            console.log('Preload: Position update received:', pos);
-            cb(pos);
+    onShowHotspot: (cb) => {
+        console.log('Preload: Setting up show hotspot listener');
+        ipcRenderer.on('show-hotspot', (_e, coords) => {
+            console.log('Preload: Show hotspot received:', coords);
+            cb(coords);
+        });
+    },
+    onHideHotspot: (cb) => {
+        console.log('Preload: Setting up hide hotspot listener');
+        ipcRenderer.on('hide-hotspot', () => {
+            console.log('Preload: Hide hotspot received');
+            cb();
         });
     },
     enableClick: () => {
