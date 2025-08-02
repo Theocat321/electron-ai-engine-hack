@@ -25,6 +25,8 @@ app.whenReady().then(() => {
         }
     });
 
+    // mainWindow.webContents.openDevTools({ mode: 'detach' });
+
     mainWindow.loadFile('index.html');
 
     // Log when main window is ready to show
