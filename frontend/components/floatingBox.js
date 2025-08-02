@@ -142,5 +142,4 @@ function createConversationInterface(container, instruction) {
 
     nextButton.addEventListener('click', makeApiRequest);
     makeApiRequest(); // auto trigger
-();
 }
