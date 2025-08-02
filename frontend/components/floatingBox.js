@@ -63,6 +63,28 @@ function createConversationInterface(container, instruction) {
     const conversationBox = document.createElement('div');
     conversationBox.className = 'conversation-box';
 
+    function updateWindowSize() {
+        // Calculate the required height based on the content
+        const messageHeight = messageText.scrollHeight;
+        const buttonHeight = 50; // Approximate button height
+        const padding = 60; // Total padding (30px top + 30px bottom)
+        const minHeight = 120; // Minimum window height
+
+        const requiredHeight = Math.max(minHeight, messageHeight + buttonHeight + padding);
+
+        console.log('Updating window size:', {
+            messageHeight,
+            buttonHeight,
+            padding,
+            requiredHeight
+        });
+
+        // Send resize request to main process
+        if (window.electronAPI && window.electronAPI.resizeInputWindow) {
+            window.electronAPI.resizeInputWindow(300, requiredHeight);
+        }
+    }
+
     const messageContainer = document.createElement('div');
     messageContainer.className = 'message-container';
 
@@ -80,6 +102,10 @@ function createConversationInterface(container, instruction) {
     conversationBox.appendChild(messageContainer);
     conversationBox.appendChild(nextButton);
     container.appendChild(conversationBox);
+
+    setTimeout(() => {
+        updateWindowSize();
+    }, 100);
 
     // State functions
     const showLoading = () => {

@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
         nextButton.disabled = true;
         nextButton.textContent = 'Loading...';
         messageText.textContent = 'Processing your request...';
+        updateWindowSize();
         console.log('Loading state applied');
     }
 
@@ -72,6 +73,10 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Updating message text to:', data.text || data.message || 'Request completed');
             messageText.textContent = data.text || data.message || 'Request completed';
 
+            setTimeout(() => {
+                updateWindowSize();
+            }, 100); // Small delay to ensure text is rendered
+
             // Create hotspot using the coordinates from the response
             console.log('Checking for electronAPI and coords...');
             console.log('window.electronAPI exists:', !!window.electronAPI);
@@ -99,6 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Error making API request:', error);
             messageText.textContent = 'Sorry, there was an error processing your request.';
+            setTimeout(() => {
+                updateWindowSize();
+            }, 100);
         } finally {
             hideLoading();
             console.log('=== API Request Complete ===');

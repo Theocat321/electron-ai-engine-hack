@@ -1,6 +1,6 @@
 // main.js
 const { log } = require('console');
-const { app, BrowserWindow, ipcMain, desktopCapturer } = require('electron');
+const { app, BrowserWindow, ipcMain, desktopCapturer, systemPreferences, screen } = require('electron');
 const path = require('path');
 const robot = require('robotjs');
 const fs = require('fs');
@@ -101,6 +101,24 @@ ipcMain.on('hotspot-click', (_, pos) => console.log('Hotspot clicked at', pos));
 ipcMain.on('perform-system-click', (_, c) => {
     robot.moveMouse(c.x, c.y);
     robot.mouseClick();
+});
+
+ipcMain.on('resize-input-window', (_, { width, height }) => {
+    console.log('Resizing input window to:', { width, height });
+    if (inputWindow) {
+        inputWindow.setSize(width, height);
+        // Optionally adjust position to keep window visible
+        const bounds = inputWindow.getBounds();
+        const display = screen.getPrimaryDisplay();
+        const screenWidth = display.workAreaSize.width;
+        const screenHeight = display.workAreaSize.height;
+
+        // Keep the window in the same relative position but ensure it's visible
+        const newX = Math.min(bounds.x, screenWidth - width);
+        const newY = Math.min(bounds.y, screenHeight - height);
+
+        inputWindow.setPosition(newX, newY);
+    }
 });
 
 ipcMain.on('resize-input-window', (_, { width, height }) => {
