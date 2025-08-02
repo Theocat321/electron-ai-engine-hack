@@ -3,6 +3,7 @@ const path = require('path');
 
 let mainWindow; // Main overlay window (click-through)
 let inputWindow; // Input window (interactive)
+let hotspotWindow; // Hotspot window (transparent, movable)
 
 app.disableHardwareAcceleration();
 
@@ -38,7 +39,7 @@ app.whenReady().then(() => {
     mainWindow.webContents.on('did-finish-load', () => {
         console.log('Main window content loaded successfully');
 
-        // Make main window completely click-through after content is loaded
+        // Make main window completely click-through
         mainWindow.setAlwaysOnTop(true, 'screen-saver');
         mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
         mainWindow.setIgnoreMouseEvents(true, { forward: true });
@@ -59,6 +60,39 @@ app.whenReady().then(() => {
     mainWindow.on('focus', () => {
         console.log('Main window focused - blurring immediately');
         mainWindow.blur();
+    });
+
+    // Create hotspot window (transparent, movable)
+    console.log('Creating hotspot window...');
+    hotspotWindow = new BrowserWindow({
+        transparent: true,
+        frame: false,
+        width: 60,
+        height: 60,
+        x: 300,
+        y: 400,
+        alwaysOnTop: true,
+        skipTaskbar: true,
+        focusable: true,
+        resizable: false,
+        show: false,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            nodeIntegration: false,
+            contextIsolation: true
+        }
+    });
+
+    // Load hotspot HTML
+    hotspotWindow.loadFile(path.join(__dirname, 'hotspot.html'));
+
+    // Handle hotspot window events
+    hotspotWindow.once('ready-to-show', () => {
+        console.log('Hotspot window is ready');
+    });
+
+    hotspotWindow.webContents.on('did-finish-load', () => {
+        console.log('Hotspot window content loaded');
     });
 
     // Create input window (small, interactive)
@@ -155,12 +189,44 @@ ipcMain.on('disable-click', () => {
     }
 });
 
+// Add a new handler for hotspot clicks that bypasses the click-through
+ipcMain.on('hotspot-click', (event, position) => {
+    console.log('Hotspot clicked at position:', position);
+    // You can add any additional logic here for handling hotspot clicks
+});
+
+// Handle hotspot window positioning
+ipcMain.on('move-hotspot', (event, position) => {
+    console.log('Moving hotspot to position:', position);
+    if (hotspotWindow) {
+        hotspotWindow.setPosition(position.x - 30, position.y - 30);
+        if (!hotspotWindow.isVisible()) {
+            hotspotWindow.show();
+        }
+        // Send position update to hotspot window
+        hotspotWindow.webContents.send('position-update', position);
+    }
+});
+
+ipcMain.on('hide-hotspot', () => {
+    console.log('Hiding hotspot window');
+    if (hotspotWindow && hotspotWindow.isVisible()) {
+        hotspotWindow.hide();
+    }
+});
+
 // Handle communication from input window to main window
 ipcMain.on('send-to-main-window', (event, data) => {
     console.log('Received message for main window:', data);
     if (data.type === 'create-hotspot' && mainWindow) {
-        console.log('Forwarding hotspot creation to main window');
-        mainWindow.webContents.send('main-window-message', data);
+        console.log('Moving hotspot to position:', data.coords);
+        // Move the hotspot window instead of creating a new element
+        if (hotspotWindow) {
+            hotspotWindow.setPosition(data.coords.x - 30, data.coords.y - 30);
+            hotspotWindow.show();
+            // Send position update to hotspot window
+            hotspotWindow.webContents.send('position-update', data.coords);
+        }
     } else if (!mainWindow) {
         console.error('Cannot send to main window: main window is not defined');
     }

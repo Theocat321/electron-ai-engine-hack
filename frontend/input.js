@@ -39,4 +39,21 @@ if (inputContainer) {
     console.log("FloatingBox added to container successfully");
 } else {
     console.error("input-container not found!");
-} 
+}
+
+// Add test button for hotspot
+const testButton = document.createElement('button');
+testButton.textContent = 'Test Hotspot';
+testButton.style.position = 'absolute';
+testButton.style.top = '10px';
+testButton.style.right = '10px';
+testButton.style.zIndex = '1000';
+testButton.addEventListener('click', () => {
+    console.log('Test hotspot button clicked');
+    // Create a test hotspot at a fixed position
+    window.electronAPI.sendToMainWindow({
+        type: 'create-hotspot',
+        coords: { x: 500, y: 300 }
+    });
+});
+document.body.appendChild(testButton); 

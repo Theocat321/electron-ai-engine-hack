@@ -1,4 +1,3 @@
-import { createHotspot } from './components/hotspot.js';
 import { addToOverlay, getOverlay } from './components/overlay.js';
 
 console.log("Main overlay window loaded");
@@ -6,21 +5,16 @@ console.log("Main overlay window loaded");
 // Listen for messages from the input window (this part is fine)
 window.electronAPI.onMainWindowMessage((data) => {
     if (data.type === 'create-hotspot') {
-        const hotspot = createHotspot(data.coords.x, data.coords.y, (e) => {
-            // This callback now works correctly
-            console.log('Hotspot clicked at', e.clientX, e.clientY);
-            window.electronAPI.sendClick({ type: 'hotspot', x: e.clientX, y: e.clientY });
-        });
-        addToOverlay(hotspot);
+        // This is now handled by the main process moving the hotspot window
+        console.log('Hotspot creation requested at:', data.coords);
     }
 });
 
-const hotspot1 = createHotspot(300, 400, (e) => {
-    console.log('Hotspot 1 clicked at:', { x: e.clientX, y: e.clientY });
-});
-const hotspot2 = createHotspot(600, 500, (e) => {
-    console.log('Hotspot 2 clicked at:', { x: e.clientX, y: e.clientY });
-});
+// Debug: Log when overlay is ready
+console.log('Overlay ready - hotspot window will be managed separately');
 
-addToOverlay(hotspot1);
-addToOverlay(hotspot2);
+// Debug: Check if electronAPI is available
+console.log('electronAPI available:', !!window.electronAPI);
+if (window.electronAPI) {
+    console.log('electronAPI methods:', Object.keys(window.electronAPI));
+}
