@@ -1,47 +1,47 @@
-const overlay = document.getElementById('overlay');
+import { createHotspot } from './components/hotspot.js';
+import { addToOverlay, getOverlay } from './components/overlay.js';
+import { createFloatingBox } from './components/floatingBox.js';
 
-function renderHotspot(x, y) {
-    const div = document.createElement('div');
-    div.className = 'hotspot';
-    div.style.left = `${x}px`;
-    div.style.top = `${y}px`;
+console.log("Renderer loaded");
 
-    div.addEventListener('mouseenter', () => {
-        window.electronAPI.enableClick();
-    });
+// Add floating box
+const floatingBox = createFloatingBox(async (instruction, outputEl) => {
+    if (!instruction) return;
+    outputEl.innerText = 'Sending...';
 
-    div.addEventListener('mouseleave', () => {
-        window.electronAPI.disableClick();
-    });
+    try {
+        const res = await fetch('https://your-backend.com/instructions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ instruction })
+        });
+        const data = await res.json();
+        outputEl.innerText = data.text || 'No response';
 
-    div.addEventListener('click', (e) => {
-        e.stopPropagation();
-        window.electronAPI.sendClick({ type: 'hotspot', x: e.clientX, y: e.clientY });
-    });
-
-    overlay.appendChild(div);
-}
-
-// Example hotspot
-renderHotspot(300, 400);
-renderHotspot(600, 500);
-
-// Capture all click events anywhere
-overlay.addEventListener('click', (e) => {
-    const coords = { type: 'click', x: e.clientX, y: e.clientY };
-    console.log('Screen click at', coords);
-    window.electronAPI.sendClick(coords);
+        if (data.coords) {
+            const hotspot = createHotspot(data.coords.x, data.coords.y, (e) => {
+                console.log('Hotspot clicked at', e.clientX, e.clientY);
+                window.electronAPI.sendClick({ type: 'hotspot', x: e.clientX, y: e.clientY });
+            });
+            addToOverlay(hotspot);
+        }
+    } catch (err) {
+        outputEl.innerText = 'Error sending request';
+        console.error(err);
+    }
 });
 
-// Example: Send screenshot to backend
-async function sendScreenshot() {
-    const imgBase64 = await window.electronAPI.getScreenshot();
-    await fetch('https://your-backend.com/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: imgBase64 })
-    });
-}
+document.body.appendChild(floatingBox);
 
-// Call screenshot periodically or on demand
-// sendScreenshot();
+// Add test hotspots
+const hotspot1 = createHotspot(300, 400, (e) => console.log('Hotspot 1', e.clientX, e.clientY));
+const hotspot2 = createHotspot(600, 500, (e) => console.log('Hotspot 2', e.clientX, e.clientY));
+addToOverlay(hotspot1);
+addToOverlay(hotspot2);
+
+// Global click logging
+getOverlay().addEventListener('click', (e) => {
+    const coords = { type: 'click', x: e.clientX, y: e.clientY };
+    console.log('Screen click:', coords);
+    window.electronAPI.sendClick(coords);
+});

@@ -33,13 +33,6 @@ ipcMain.handle('get-screenshot', async () => {
 // Handle click logging
 ipcMain.on('click-event', (event, coords) => {
     console.log('User clicked at:', coords);
-
-    // Example: send to backend
-    fetch('https://your-backend.com/click-log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(coords)
-    }).catch(err => console.error(err));
 });
 
 ipcMain.on('enable-click', () => {
