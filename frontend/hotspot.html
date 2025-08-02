@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <title>Hotspot</title>
     <style>
-        html, body {
+        html,
+        body {
             margin: 0;
             padding: 0;
             background: transparent !important;
@@ -37,8 +39,25 @@
         }
     </style>
 </head>
+
 <body>
     <div id="hotspot"></div>
-    <script type="module" src="hotspot.js"></script>
+    <script>
+        const el = document.getElementById('hotspot');
+        el.addEventListener('click', () => {
+            // Calculate the center of this 60×60 window
+            const { x, y } = window.screen; // absolute window position
+            const cx = x + 30, cy = y + 30;
+            window.electronAPI.performClick({ x: cx, y: cy });
+        });
+        // If you want to drag it around:
+        el.addEventListener('mousedown', () => {
+            window.electronAPI.enableClick();   // let the user drag
+        });
+        el.addEventListener('mouseup', () => {
+            window.electronAPI.disableClick();  // go back to click‐through
+        });
+    </script>
 </body>
-</html> 
+
+</html>

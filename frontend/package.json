@@ -1,10 +1,18 @@
 {
-  "name": "frontend",
+  "name": "screen-overlay-app",
+  "version": "1.0.0",
+  "description": "A screen overlay application built with Electron.",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "rebuild": "electron-rebuild -f -w robotjs",
+    "postinstall": "electron-rebuild -f -w robotjs"
   },
   "devDependencies": {
-    "electron": "^37.2.5"
+    "electron": "^31.0.1",
+    "electron-rebuild": "^3.2.9"
+  },
+  "dependencies": {
+    "robotjs": "^0.6.0"
   }
 }
