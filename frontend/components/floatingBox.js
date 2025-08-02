@@ -1,6 +1,6 @@
 export function createFloatingBox(sendCallback, width = 300, height = 50) {
     const box = document.createElement('div');
-    box.className = 'floating-box';
+    box.className = 'floating-box compact';
     box.id = 'input-box';
 
     // We'll override these with CSS to make it fill the container
@@ -8,18 +8,27 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
     box.style.width = `${width}px`;
     box.style.height = `${height}px`;
 
+    const inputContainer = document.createElement('div');
+    inputContainer.className = 'input-container';
+
     const textarea = document.createElement('textarea');
-    textarea.placeholder = 'Enter instructions';
+    textarea.placeholder = 'Ask me anything...';
     textarea.className = 'floating-box-textarea';
     textarea.setAttribute('data-no-drag', 'true'); // Mark as non-draggable
+    textarea.rows = 1; // Keep it to a single line
 
     const button = document.createElement('button');
-    button.innerText = 'Send';
-    button.className = 'floating-box-button';
+    button.className = 'send-icon-button';
     button.setAttribute('data-no-drag', 'true'); // Mark as non-draggable
 
-    box.appendChild(textarea);
-    box.appendChild(button);
+    const sendIcon = document.createElement('span');
+    sendIcon.className = 'material-icons';
+    sendIcon.textContent = 'send';
+
+    button.appendChild(sendIcon);
+    inputContainer.appendChild(textarea);
+    inputContainer.appendChild(button);
+    box.appendChild(inputContainer);
 
     // No need for output element anymore
 
