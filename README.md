@@ -110,17 +110,14 @@ npm start
 - [README_TTS.md](README_TTS.md): ElevenLabs TTS integration details.
 - [backend/ELEVENLABS_SETUP.md](backend/ELEVENLABS_SETUP.md): TTS setup and troubleshooting.
 
----
-
-## 🤝 Contributing
-We welcome feedback, partnerships, and contributions from forward-thinking companies and developers!  
-Please open an issue or submit a pull request.
-
 
 ---
 
-## 📜 License
+## 📜 Property Of Developers
 
-MIT License
+- Adam O'Neill
+- Jeremy Shorter
+- Pratyaksh Mishra
+
 
 ---
