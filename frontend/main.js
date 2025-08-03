@@ -159,6 +159,13 @@ ipcMain.on('send-to-main-window', (_, data) => {
         mainWindow?.webContents.send('show-hotspot', data.coords);
 
         console.log('Hotspot creation complete');
+    } else if (data.type === 'hide-hotspot') {
+        console.log('Hiding hotspot...');
+        
+        // Send hide command to main overlay window
+        mainWindow?.webContents.send('hide-hotspot');
+        
+        console.log('Hotspot hidden');
     } else {
         console.log('Unknown message type:', data.type);
     }

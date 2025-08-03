@@ -437,6 +437,12 @@ function createConversationInterface(container, instruction) {
         console.log('=== Next button clicked ===');
         console.log('Is first request:', isFirstRequest);
 
+        // Hide hotspot when Next button is pressed
+        console.log('Hiding hotspot before making API request...');
+        if (window.electronAPI && window.electronAPI.sendToMainWindow) {
+            window.electronAPI.sendToMainWindow({ type: 'hide-hotspot' });
+        }
+
         // Only call update_screenshot after the initial request
         makeApiRequest(isFirstRequest);
 
