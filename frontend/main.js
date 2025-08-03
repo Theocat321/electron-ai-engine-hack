@@ -35,6 +35,17 @@ app.whenReady().then(() => {
             allowRunningInsecureContent: true
         }
     });
+    
+    // macOS-specific configuration for transparent windows
+    hotspotWindow.setBackgroundColor('#00000000'); // Fully transparent
+    hotspotWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    
+    // Set window level for macOS to ensure it stays on top
+    if (process.platform === 'darwin') {
+        hotspotWindow.setWindowButtonVisibility(false);
+        hotspotWindow.setAlwaysOnTop(true, 'floating');
+    }
+    
     hotspotWindow.loadFile(path.join(__dirname, 'hotspot.html'));
 
     // -- Input window --
@@ -82,9 +93,18 @@ app.whenReady().then(() => {
 ipcMain.on('enable-click', () => mainWindow?.setIgnoreMouseEvents(false));
 ipcMain.on('disable-click', () => mainWindow?.setIgnoreMouseEvents(true, { forward: true }));
 ipcMain.on('move-hotspot', (_, p) => {
-    hotspotWindow?.setPosition(p.x - 30, p.y - 30);
-    hotspotWindow?.show();
-    hotspotWindow?.webContents.send('position-update', p);
+    if (!hotspotWindow) return;
+    
+    hotspotWindow.setPosition(p.x - 30, p.y - 30);
+    
+    // Ensure window is visible on macOS
+    if (process.platform === 'darwin') {
+        hotspotWindow.setAlwaysOnTop(true, 'floating');
+    }
+    
+    hotspotWindow.show();
+    hotspotWindow.focus(); // Force focus to ensure visibility
+    hotspotWindow.webContents.send('position-update', p);
 });
 ipcMain.on('hide-hotspot', () => hotspotWindow?.hide());
 ipcMain.on('hotspot-click', (_, pos) => console.log('Hotspot clicked at', pos));
@@ -173,8 +193,14 @@ ipcMain.on('send-to-main-window', (_, data) => {
         console.log('Setting hotspot window position to:', { x: windowX, y: windowY });
         hotspotWindow?.setPosition(windowX, windowY);
 
+        // Ensure window is visible on macOS
+        if (process.platform === 'darwin') {
+            hotspotWindow?.setAlwaysOnTop(true, 'floating');
+        }
+        
         console.log('Showing hotspot window...');
         hotspotWindow?.show();
+        hotspotWindow?.focus(); // Force focus to ensure visibility
 
         console.log('Sending position update to hotspot window...');
         hotspotWindow?.webContents.send('position-update', data.coords);
