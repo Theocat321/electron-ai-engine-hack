@@ -23,13 +23,13 @@ class CoordinateAgent:
     precise coordinates for UI interaction.
     """
     
-    def __init__(self, model_name: str = "gemini-2.5-flash"):
+    def __init__(self, model_name: str = "claude-sonnet-4-20250514"):
         # Verify Anthropic API key is available
         if not os.getenv("ANTHROPIC_API_KEY"):
             raise ValueError("ANTHROPIC_API_KEY environment variable is required. Please add it to your .env file.")
         
-        # self.llm = ChatAnthropic(model=model_name).with_structured_output(Coordinates, include_raw=True)
-        self.llm = ChatGoogleGenerativeAI(model=model_name).with_structured_output(Coordinates, include_raw=True)
+        self.llm = ChatAnthropic(model=model_name).with_structured_output(Coordinates, include_raw=True)
+        # self.llm = ChatGoogleGenerativeAI(model=model_name).with_structured_output(Coordinates, include_raw=True)
 
     def _parse_coordinates_from_text(self, text: str) -> Tuple[int, int]:
         """
