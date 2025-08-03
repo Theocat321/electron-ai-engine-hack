@@ -1,16 +1,19 @@
 // preload.js
 const { contextBridge, ipcRenderer } = require('electron');
 
+// Channels for hotspot events
+const SHOW_CHANNEL = 'show-hotspot';
+const HIDE_CHANNEL = 'hide-hotspot';
+const MAIN_MSG_CHANNEL = 'main-window-message';
+
 contextBridge.exposeInMainWorld('electronAPI', {
-    sendToMainWindow: (data) => {
+    // Outgoing messages
+    sendToMainWindow: data => {
         console.log('Preload: Sending to main window:', data);
         ipcRenderer.send('send-to-main-window', data);
     },
     getScreenshot: () => ipcRenderer.invoke('get-screenshot'),
-    hideHotspot: () => {
-        console.log('Preload: Hiding hotspot');
-        ipcRenderer.send('hide-hotspot');
-    },
+
     enableClick: () => {
         console.log('Preload: Enabling click');
         ipcRenderer.send('enable-click');
@@ -19,7 +22,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
         console.log('Preload: Disabling click');
         ipcRenderer.send('disable-click');
     },
-    performSystemClick: (coords) => {
+    hideHotspot: () => {
+        console.log('Preload: Hiding hotspot');
+        ipcRenderer.send('hide-hotspot');
+    },
+    performSystemClick: coords => {
         console.log('Preload: Performing system click at:', coords);
         ipcRenderer.send('perform-system-click', coords);
     },
@@ -27,23 +34,31 @@ contextBridge.exposeInMainWorld('electronAPI', {
         console.log('Preload: Resizing input window to:', { width, height });
         ipcRenderer.send('resize-input-window', { width, height });
     },
-    // Expose ipcRenderer for main window hotspot messages
-    ipcRenderer: {
-        on: (channel, func) => {
-            const validChannels = ['show-hotspot', 'hide-hotspot'];
-            if (validChannels.includes(channel)) {
-                ipcRenderer.on(channel, func);
-            }
-        },
-        removeAllListeners: (channel) => {
-            const validChannels = ['show-hotspot', 'hide-hotspot'];
-            if (validChannels.includes(channel)) {
-                ipcRenderer.removeAllListeners(channel);
-            }
+
+    // Incoming listeners
+    onShowHotspot: callback => {
+        if (typeof callback === 'function') {
+            ipcRenderer.on(SHOW_CHANNEL, (_event, coords) => {
+                console.log('Preload: show-hotspot received:', coords);
+                callback(coords);
+            });
         }
     },
-    onMainWindowMessage: (callback) => {
-        ipcRenderer.on('main-window-message', (_event, data) => callback(data));
+    onHideHotspot: callback => {
+        if (typeof callback === 'function') {
+            ipcRenderer.on(HIDE_CHANNEL, () => {
+                console.log('Preload: hide-hotspot received');
+                callback();
+            });
+        }
+    },
+    onMainWindowMessage: callback => {
+        if (typeof callback === 'function') {
+            ipcRenderer.on(MAIN_MSG_CHANNEL, (_event, data) => {
+                console.log('Preload: main-window-message received:', data);
+                callback(data);
+            });
+        }
     }
 });
 
