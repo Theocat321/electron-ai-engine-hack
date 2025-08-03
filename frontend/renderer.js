@@ -4,34 +4,123 @@ console.log("Main overlay window loaded");
 
 let currentHotspot = null;
 
-// Function to create hotspot HTML element
+// Function to create modern AI hotspot HTML element
 function createHotspotElement(x, y) {
     const hotspot = document.createElement('div');
-    hotspot.className = 'hotspot-indicator';
+    hotspot.className = 'ai-hotspot-indicator';
+
+    // Create inner elements for layered effect
+    const innerRing = document.createElement('div');
+    innerRing.className = 'ai-hotspot-inner';
+
+    const centerDot = document.createElement('div');
+    centerDot.className = 'ai-hotspot-center';
+
+    const ripple = document.createElement('div');
+    ripple.className = 'ai-hotspot-ripple';
+
+    hotspot.appendChild(ripple);
+    hotspot.appendChild(innerRing);
+    hotspot.appendChild(centerDot);
+
     hotspot.style.cssText = `
         position: absolute;
         left: ${x - 20}px;
         top: ${y - 20}px;
-        width: 40px;
-        height: 40px;
-        background: rgba(255, 0, 0, 0.9);
-        border: 3px solid rgba(255, 255, 255, 0.8);
-        border-radius: 50%;
-        box-shadow: 0 0 15px rgba(255, 0, 0, 0.8), 0 0 30px rgba(255, 0, 0, 0.4);
-        animation: hotspotPulse 2s infinite;
+        width: 60px;
+        height: 60px;
         pointer-events: none;
         z-index: 9999;
+        animation: aiHotspotFloat 3s ease-in-out infinite;
     `;
+
     return hotspot;
 }
 
-// Add CSS animation for hotspot pulse
+// Add modern AI hotspot CSS styling and animations
 const style = document.createElement('style');
 style.textContent = `
-    @keyframes hotspotPulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
+    .ai-hotspot-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        filter: drop-shadow(0 0 20px rgba(0, 150, 255, 0.6));
+    }
+    
+    .ai-hotspot-ripple {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border: 2px solid rgba(0, 150, 255, 0.4);
+        border-radius: 50%;
+        animation: aiHotspotRipple 2s ease-out infinite;
+    }
+    
+    .ai-hotspot-inner {
+        position: absolute;
+        width: 70%;
+        height: 70%;
+        background: linear-gradient(135deg, rgba(0, 150, 255, 0.3), rgba(100, 200, 255, 0.2));
+        border: 1px solid rgba(0, 150, 255, 0.6);
+        border-radius: 50%;
+        backdrop-filter: blur(2px);
+        animation: aiHotspotGlow 2.5s ease-in-out infinite alternate;
+    }
+
+    
+    /* Floating animation */
+    @keyframes aiHotspotFloat {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-3px); }
+    }
+    
+    /* Ripple expansion animation */
+    @keyframes aiHotspotRipple {
+        0% { 
+            transform: scale(0.8); 
+            opacity: 0.8; 
+            border-color: rgba(0, 150, 255, 0.6);
+        }
+        50% { 
+            transform: scale(1.1); 
+            opacity: 0.4; 
+            border-color: rgba(0, 150, 255, 0.3);
+        }
+        100% { 
+            transform: scale(1.4); 
+            opacity: 0; 
+            border-color: rgba(0, 150, 255, 0.1);
+        }
+    }
+    
+    /* Inner ring glow animation */
+    @keyframes aiHotspotGlow {
+        0% { 
+            box-shadow: 
+                0 0 10px rgba(0, 150, 255, 0.4),
+                inset 0 0 10px rgba(0, 150, 255, 0.1);
+        }
+        100% { 
+            box-shadow: 
+                0 0 20px rgba(0, 150, 255, 0.6),
+                inset 0 0 15px rgba(0, 150, 255, 0.2);
+        }
+    }
+    
+    /* Center dot pulse animation */
+    @keyframes aiHotspotPulse {
+        0%, 100% { 
+            transform: scale(1);
+            box-shadow: 
+                0 0 8px rgba(0, 191, 255, 0.8),
+                inset 0 0 4px rgba(255, 255, 255, 0.3);
+        }
+        50% { 
+            transform: scale(1.2);
+            box-shadow: 
+                0 0 12px rgba(0, 191, 255, 1),
+                inset 0 0 6px rgba(255, 255, 255, 0.5);
+        }
     }
 `;
 document.head.appendChild(style);
@@ -40,12 +129,12 @@ document.head.appendChild(style);
 if (window.electronAPI && window.electronAPI.ipcRenderer) {
     window.electronAPI.ipcRenderer.on('show-hotspot', (event, coords) => {
         console.log('Showing hotspot at:', coords);
-        
+
         // Remove existing hotspot if any
         if (currentHotspot) {
             currentHotspot.remove();
         }
-        
+
         // Create and add new hotspot
         currentHotspot = createHotspotElement(coords.x, coords.y);
         document.body.appendChild(currentHotspot);
