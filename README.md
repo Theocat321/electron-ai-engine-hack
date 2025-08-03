@@ -20,7 +20,7 @@ Clueless is an AI-powered desktop assistant built for businesses to deliver real
 
 - **Backend**: Python, LangChain, Langraph
 - **Frontend**: Electron.js
-- **AI & Tools**: ElevenLabs (voice synthesis), aci.dev (AI infrastructure), Anthropic Claude (multimodal LLM)
+- **AI & Tools**: ElevenLabs (voice synthesis), Aci.dev (AI infrastructure), Anthropic Claude (multimodal LLM)
 - **Capabilities**: Visual UI automation, conversational workflow engine, voice-guided walkthroughs
 
 ---
@@ -55,15 +55,67 @@ Clueless is an AI-powered desktop assistant built for businesses to deliver real
 
 ## 🚀 Quick Start
 
-_Coming soon: Full setup and integration instructions!_  
-Interested in a pilot? Contact us for a demo or early access.
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/yourusername/clueless.git
+cd clueless
+```
+
+### 2. Backend Setup
+
+```bash
+cd backend
+cp .env.example .env
+# Add your API keys (Anthropic, ElevenLabs) to .env
+pip install -r requirements.txt
+python setup_elevenlabs.py  # Or manually add ELEVENLABS_API_KEY to .env
+python test_tts.py          # Optional: test TTS integration
+python main.py              # Start the backend server (http://localhost:8000)
+```
+
+### 3. Frontend Setup
+
+```bash
+cd ../frontend
+npm install
+npm start
+```
+
+---
+
+## 🖥️ Usage
+
+1. **Start the backend and frontend as above.**
+2. **Enter your instruction** in the input window (e.g., "Send an email to John on Gmail").
+3. **Follow the AI's step-by-step instructions**:
+    - Listen to the voice prompt.
+    - Click the highlighted hotspot on your screen.
+    - Continue until your goal is accomplished.
+4. **Control audio and check status** using the conversation interface buttons.
+
+---
+
+## 🛠️ Customization
+
+- **Change Default Voice**: Edit `voice_id` in [`backend/tts_service.py`](backend/tts_service.py).
+- **Adjust Audio Volume**: Edit `audio.volume` in [`frontend/components/floatingBox.js`](frontend/components/floatingBox.js).
+- **UI Styling**: Modify CSS in [`frontend/styles.css`](frontend/styles.css) or [`frontend/consolidated.css`](frontend/consolidated.css).
+
+---
+
+## 📚 Documentation
+
+- [backend/README.md](backend/README.md): Backend API, endpoints, and architecture.
+- [README_TTS.md](README_TTS.md): ElevenLabs TTS integration details.
+- [backend/ELEVENLABS_SETUP.md](backend/ELEVENLABS_SETUP.md): TTS setup and troubleshooting.
 
 ---
 
 ## 🤝 Contributing
-
 We welcome feedback, partnerships, and contributions from forward-thinking companies and developers!  
 Please open an issue or submit a pull request.
+
 
 ---
 
