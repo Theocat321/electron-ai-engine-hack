@@ -106,6 +106,14 @@ ipcMain.on('resize-input-window', (_, { width, height }) => {
         inputWindow.setPosition(newX, newY);
     }
 });
+ipcMain.on('close-current-window', (event) => {
+    console.log('Close window request received');
+    const webContents = event.sender;
+    const window = BrowserWindow.fromWebContents(webContents);
+    if (window) {
+        window.close();
+    }
+});
 ipcMain.handle('get-screenshot', async () => {
     console.log('=== SCREENSHOT REQUEST RECEIVED ===');
     try {

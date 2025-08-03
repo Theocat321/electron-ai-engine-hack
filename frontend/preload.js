@@ -34,6 +34,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
         console.log('Preload: Resizing input window to:', { width, height });
         ipcRenderer.send('resize-input-window', { width, height });
     },
+    closeWindow: () => {
+        console.log('Preload: Closing current window');
+        ipcRenderer.send('close-current-window');
+    },
 
     // Incoming listeners
     onShowHotspot: callback => {

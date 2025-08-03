@@ -8,6 +8,71 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
     box.style.width = `${width}px`;
     box.style.height = `${height}px`;
 
+    // Create control buttons container
+    const controlButtons = document.createElement('div');
+    controlButtons.className = 'control-buttons';
+    controlButtons.style.position = 'absolute';
+    controlButtons.style.top = '8px';
+    controlButtons.style.right = '8px';
+    controlButtons.style.display = 'flex';
+    controlButtons.style.gap = '5px';
+    controlButtons.style.zIndex = '1000';
+
+    // Create reload button
+    const reloadButton = document.createElement('button');
+    reloadButton.className = 'control-button reload-button';
+    reloadButton.setAttribute('data-no-drag', 'true');
+    reloadButton.title = 'Reload';
+
+    const reloadIcon = document.createElement('span');
+    reloadIcon.className = 'material-icons';
+    reloadIcon.textContent = 'refresh';
+    reloadButton.appendChild(reloadIcon);
+
+    // Create exit button
+    const exitButton = document.createElement('button');
+    exitButton.className = 'control-button exit-button';
+    exitButton.setAttribute('data-no-drag', 'true'); exitButton.title = 'Close';
+
+    const exitIcon = document.createElement('span');
+    exitIcon.className = 'material-icons';
+    exitIcon.textContent = 'close';
+    exitButton.appendChild(exitIcon);
+
+    // Add button functionality
+    reloadButton.addEventListener('click', async () => {
+        try {
+            // Hide hotspots before resetting
+            if (window.electronAPI && window.electronAPI.sendToMainWindow) {
+                window.electronAPI.sendToMainWindow({ type: 'hide-hotspot' });
+            }
+            await fetch('http://localhost:8000/reset', { method: 'POST' });
+            window.location.reload();
+        } catch (error) {
+            console.error('Error resetting session:', error);
+            // Hide hotspots even if reset fails
+            if (window.electronAPI && window.electronAPI.sendToMainWindow) {
+                window.electronAPI.sendToMainWindow({ type: 'hide-hotspot' });
+            }
+            window.location.reload(); // Reload anyway
+        }
+    });
+
+    exitButton.addEventListener('click', () => {
+        // Hide hotspots before closing
+        if (window.electronAPI && window.electronAPI.sendToMainWindow) {
+            window.electronAPI.sendToMainWindow({ type: 'hide-hotspot' });
+        }
+        if (window.electronAPI && window.electronAPI.closeWindow) {
+            window.electronAPI.closeWindow();
+        } else {
+            window.close();
+        }
+    });
+
+    controlButtons.appendChild(reloadButton);
+    controlButtons.appendChild(exitButton);
+
     const inputContainer = document.createElement('div');
     inputContainer.className = 'input-container';
 
@@ -83,7 +148,9 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
 
     inputContainer.appendChild(textarea);
     inputContainer.appendChild(button);
+    box.appendChild(controlButtons);
     box.appendChild(inputContainer);
+    box.appendChild(controlButtons);
 
     // No need for output element anymore
 
@@ -182,6 +249,72 @@ function createConversationInterface(container, instruction) {
 
     const conversationBox = document.createElement('div');
     conversationBox.className = 'conversation-box';
+
+    // Create control buttons container for conversation interface
+    const controlButtons = document.createElement('div');
+    controlButtons.className = 'control-buttons';
+    controlButtons.style.position = 'absolute';
+    controlButtons.style.top = '8px';
+    controlButtons.style.right = '8px';
+    controlButtons.style.display = 'flex';
+    controlButtons.style.gap = '5px';
+    controlButtons.style.zIndex = '1000';
+
+    // Create reload button
+    const reloadButton = document.createElement('button');
+    reloadButton.className = 'control-button reload-button';
+    reloadButton.setAttribute('data-no-drag', 'true');
+    reloadButton.title = 'Reload';
+
+    const reloadIcon = document.createElement('span');
+    reloadIcon.className = 'material-icons';
+    reloadIcon.textContent = 'refresh';
+    reloadButton.appendChild(reloadIcon);
+
+    // Create exit button
+    const exitButton = document.createElement('button');
+    exitButton.className = 'control-button exit-button';
+    exitButton.setAttribute('data-no-drag', 'true');
+    exitButton.title = 'Close';
+
+    const exitIcon = document.createElement('span');
+    exitIcon.className = 'material-icons';
+    exitIcon.textContent = 'close';
+    exitButton.appendChild(exitIcon);
+
+    // Add button functionality
+    reloadButton.addEventListener('click', async () => {
+        try {
+            // Hide hotspots before resetting
+            if (window.electronAPI && window.electronAPI.sendToMainWindow) {
+                window.electronAPI.sendToMainWindow({ type: 'hide-hotspot' });
+            }
+            await fetch('http://localhost:8000/reset', { method: 'POST' });
+            window.location.reload();
+        } catch (error) {
+            console.error('Error resetting session:', error);
+            // Hide hotspots even if reset fails
+            if (window.electronAPI && window.electronAPI.sendToMainWindow) {
+                window.electronAPI.sendToMainWindow({ type: 'hide-hotspot' });
+            }
+            window.location.reload(); // Reload anyway
+        }
+    });
+
+    exitButton.addEventListener('click', () => {
+        // Hide hotspots before closing
+        if (window.electronAPI && window.electronAPI.sendToMainWindow) {
+            window.electronAPI.sendToMainWindow({ type: 'hide-hotspot' });
+        }
+        if (window.electronAPI && window.electronAPI.closeWindow) {
+            window.electronAPI.closeWindow();
+        } else {
+            window.close();
+        }
+    });
+
+    controlButtons.appendChild(reloadButton);
+    controlButtons.appendChild(exitButton);
 
     const messageContainer = document.createElement('div');
     messageContainer.className = 'message-container';
@@ -462,6 +595,7 @@ function createConversationInterface(container, instruction) {
     buttonContainer.appendChild(nextButton);
 
     messageContainer.appendChild(messageText);
+    conversationBox.appendChild(controlButtons);
     conversationBox.appendChild(messageContainer);
     conversationBox.appendChild(buttonContainer);
 
