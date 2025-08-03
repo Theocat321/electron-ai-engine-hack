@@ -155,6 +155,45 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
     return box;
 }
 
+// Helper function to play TTS audio
+function playTTSAudio(audioBase64) {
+    if (!audioBase64) {
+        console.log('No audio data provided');
+        return;
+    }
+
+    try {
+        console.log('Playing TTS audio...');
+
+        // Convert base64 to blob
+        const audioBytes = atob(audioBase64);
+        const audioArray = new Uint8Array(audioBytes.length);
+        for (let i = 0; i < audioBytes.length; i++) {
+            audioArray[i] = audioBytes.charCodeAt(i);
+        }
+
+        const audioBlob = new Blob([audioArray], { type: 'audio/mpeg' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+        // Create and play audio element
+        const audio = new Audio(audioUrl);
+        audio.play().then(() => {
+            console.log('TTS audio started playing');
+        }).catch(error => {
+            console.error('Error playing TTS audio:', error);
+        });
+
+        // Clean up the object URL after playing
+        audio.addEventListener('ended', () => {
+            URL.revokeObjectURL(audioUrl);
+            console.log('TTS audio playback completed');
+        });
+
+    } catch (error) {
+        console.error('Error creating TTS audio:', error);
+    }
+}
+
 // Helper function to create the conversation interface
 function createConversationInterface(container, instruction) {
     console.log('Creating conversation interface...');
@@ -343,8 +382,16 @@ function createConversationInterface(container, instruction) {
             window.currentTaskData = data;
 
             // Update the message text with the task description
-            console.log('Updating message text to:', data.task || data.task_description || 'Request completed');
-            messageText.textContent = data.task || data.task_description || 'Request completed';
+            console.log('Updating message text to:', data.task || 'Request completed');
+            messageText.textContent = data.task || 'Request completed';
+
+            // Play TTS audio if available
+            if (data.audio_base64) {
+                console.log('Audio data received, playing TTS...');
+                playTTSAudio(data.audio_base64);
+            } else {
+                console.log('No audio data in response');
+            }
 
             // Update window size after text content changes
             setTimeout(() => {
@@ -380,6 +427,12 @@ function createConversationInterface(container, instruction) {
                 messageText.textContent = 'All tasks completed successfully!';
                 nextButton.textContent = 'Start New Task';
                 nextButton.disabled = false;
+
+                // Play completion audio if available
+                if (data.audio_base64) {
+                    console.log('Playing completion audio...');
+                    playTTSAudio(data.audio_base64);
+                }
 
                 // Reset the session when clicking after completion
                 nextButton.onclick = async () => {
