@@ -18,60 +18,9 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
     controlButtons.style.gap = '5px';
     controlButtons.style.zIndex = '1000';
 
-    // Create reload button
-    const reloadButton = document.createElement('button');
-    reloadButton.className = 'control-button reload-button';
-    reloadButton.setAttribute('data-no-drag', 'true');
-    reloadButton.title = 'Reload';
-
-    const reloadIcon = document.createElement('span');
-    reloadIcon.className = 'material-icons';
-    reloadIcon.textContent = 'refresh';
-    reloadButton.appendChild(reloadIcon);
-
-    // Create exit button
-    const exitButton = document.createElement('button');
-    exitButton.className = 'control-button exit-button';
-    exitButton.setAttribute('data-no-drag', 'true'); exitButton.title = 'Close';
-
     const exitIcon = document.createElement('span');
     exitIcon.className = 'material-icons';
     exitIcon.textContent = 'close';
-    exitButton.appendChild(exitIcon);
-
-    // Add button functionality
-    reloadButton.addEventListener('click', async () => {
-        try {
-            // Hide hotspots before resetting
-            if (window.electronAPI && window.electronAPI.sendToMainWindow) {
-                window.electronAPI.sendToMainWindow({ type: 'hide-hotspot' });
-            }
-            await fetch('http://localhost:8000/reset', { method: 'POST' });
-            window.location.reload();
-        } catch (error) {
-            console.error('Error resetting session:', error);
-            // Hide hotspots even if reset fails
-            if (window.electronAPI && window.electronAPI.sendToMainWindow) {
-                window.electronAPI.sendToMainWindow({ type: 'hide-hotspot' });
-            }
-            window.location.reload(); // Reload anyway
-        }
-    });
-
-    exitButton.addEventListener('click', () => {
-        // Hide hotspots before closing
-        if (window.electronAPI && window.electronAPI.sendToMainWindow) {
-            window.electronAPI.sendToMainWindow({ type: 'hide-hotspot' });
-        }
-        if (window.electronAPI && window.electronAPI.closeWindow) {
-            window.electronAPI.closeWindow();
-        } else {
-            window.close();
-        }
-    });
-
-    controlButtons.appendChild(reloadButton);
-    controlButtons.appendChild(exitButton);
 
     const inputContainer = document.createElement('div');
     inputContainer.className = 'input-container';
@@ -91,6 +40,28 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
     sendIcon.textContent = 'send';
 
     button.appendChild(sendIcon);
+
+    // Create reload button after send button
+    const reloadInputButton = document.createElement('button');
+    reloadInputButton.className = 'send-icon-button'; // Use same class as send button
+    reloadInputButton.setAttribute('data-no-drag', 'true');
+    reloadInputButton.title = 'Reset and Reload';
+
+    const reloadInputIcon = document.createElement('span');
+    reloadInputIcon.className = 'material-icons';
+    reloadInputIcon.textContent = 'refresh';
+    reloadInputButton.appendChild(reloadInputIcon);
+
+    // Add reload functionality
+    reloadInputButton.addEventListener('click', async () => {
+        try {
+            await fetch('http://localhost:8000/reset', { method: 'POST' });
+            window.location.reload();
+        } catch (error) {
+            console.error('Error resetting session:', error);
+            window.location.reload(); // Reload anyway
+        }
+    });
 
     // Add debounce mechanism to prevent multiple rapid clicks
     let isStatusLoading = false;
@@ -148,6 +119,7 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
 
     inputContainer.appendChild(textarea);
     inputContainer.appendChild(button);
+    inputContainer.appendChild(reloadInputButton);
     box.appendChild(controlButtons);
     box.appendChild(inputContainer);
     box.appendChild(controlButtons);
@@ -271,17 +243,6 @@ function createConversationInterface(container, instruction) {
     reloadIcon.textContent = 'refresh';
     reloadButton.appendChild(reloadIcon);
 
-    // Create exit button
-    const exitButton = document.createElement('button');
-    exitButton.className = 'control-button exit-button';
-    exitButton.setAttribute('data-no-drag', 'true');
-    exitButton.title = 'Close';
-
-    const exitIcon = document.createElement('span');
-    exitIcon.className = 'material-icons';
-    exitIcon.textContent = 'close';
-    exitButton.appendChild(exitIcon);
-
     // Add button functionality
     reloadButton.addEventListener('click', async () => {
         try {
@@ -301,20 +262,9 @@ function createConversationInterface(container, instruction) {
         }
     });
 
-    exitButton.addEventListener('click', () => {
-        // Hide hotspots before closing
-        if (window.electronAPI && window.electronAPI.sendToMainWindow) {
-            window.electronAPI.sendToMainWindow({ type: 'hide-hotspot' });
-        }
-        if (window.electronAPI && window.electronAPI.closeWindow) {
-            window.electronAPI.closeWindow();
-        } else {
-            window.close();
-        }
-    });
+
 
     controlButtons.appendChild(reloadButton);
-    controlButtons.appendChild(exitButton);
 
     const messageContainer = document.createElement('div');
     messageContainer.className = 'message-container';

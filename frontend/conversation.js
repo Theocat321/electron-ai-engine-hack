@@ -27,16 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
     reloadIcon.textContent = 'refresh';
     reloadButton.appendChild(reloadIcon);
 
-    // Create exit button
-    const exitButton = document.createElement('button');
-    exitButton.className = 'control-button exit-button';
-    exitButton.setAttribute('data-no-drag', 'true');
-    exitButton.title = 'Close';
-
-    const exitIcon = document.createElement('span');
-    exitIcon.className = 'material-icons';
-    exitIcon.textContent = 'close';
-    exitButton.appendChild(exitIcon);
 
     // Add button functionality
     reloadButton.addEventListener('click', async () => {
@@ -57,20 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    exitButton.addEventListener('click', () => {
-        // Hide hotspots before closing
-        if (window.electronAPI && window.electronAPI.sendToMainWindow) {
-            window.electronAPI.sendToMainWindow({ type: 'hide-hotspot' });
-        }
-        if (window.electronAPI && window.electronAPI.closeWindow) {
-            window.electronAPI.closeWindow();
-        } else {
-            window.close();
-        }
-    });
-
     controlButtons.appendChild(reloadButton);
-    controlButtons.appendChild(exitButton);
 
     // Add control buttons to the body
     document.body.appendChild(controlButtons);
