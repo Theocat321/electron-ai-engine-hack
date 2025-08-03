@@ -7,20 +7,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.send('send-to-main-window', data);
     },
     getScreenshot: () => ipcRenderer.invoke('get-screenshot'),
-    hotspotClick: (position) => {
-        console.log('Preload: Hotspot click:', position);
-        ipcRenderer.send('hotspot-click', position);
-    },
     hideHotspot: () => {
         console.log('Preload: Hiding hotspot');
         ipcRenderer.send('hide-hotspot');
-    },
-    onPositionUpdate: (cb) => {
-        console.log('Preload: Setting up position update listener');
-        ipcRenderer.on('position-update', (_e, pos) => {
-            console.log('Preload: Position update received:', pos);
-            cb(pos);
-        });
     },
     enableClick: () => {
         console.log('Preload: Enabling click');
@@ -30,10 +19,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
         console.log('Preload: Disabling click');
         ipcRenderer.send('disable-click');
     },
-    moveHotspot: (pos) => {
-        console.log('Preload: Moving hotspot to:', pos);
-        ipcRenderer.send('move-hotspot', pos);
-    },
     performSystemClick: (coords) => {
         console.log('Preload: Performing system click at:', coords);
         ipcRenderer.send('perform-system-click', coords);
@@ -42,6 +27,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
         console.log('Preload: Resizing input window to:', { width, height });
         ipcRenderer.send('resize-input-window', { width, height });
     },
+    // Expose ipcRenderer for main window hotspot messages
+    ipcRenderer: {
+        on: (channel, func) => {
+            const validChannels = ['show-hotspot', 'hide-hotspot'];
+            if (validChannels.includes(channel)) {
+                ipcRenderer.on(channel, func);
+            }
+        },
+        removeAllListeners: (channel) => {
+            const validChannels = ['show-hotspot', 'hide-hotspot'];
+            if (validChannels.includes(channel)) {
+                ipcRenderer.removeAllListeners(channel);
+            }
+        }
+    },
+    onMainWindowMessage: (callback) => {
+        ipcRenderer.on('main-window-message', (_event, data) => callback(data));
+    }
 });
 
 console.log('Preload script executed');
