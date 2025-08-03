@@ -28,8 +28,8 @@ function createHotspotElement(x, y) {
     width: ${size}px;
     height: ${size}px;
     pointer-events: none;
-    z-index: 1000000;
-    animation: aiHotspotFloat 3s ease-in-out infinite;
+    z-index: 9999;
+     animation: aiHotspotFloat 3s ease-in-out infinite;
   `;
 
     return hotspot;
