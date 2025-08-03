@@ -3,46 +3,39 @@ const { app, BrowserWindow, ipcMain, desktopCapturer, systemPreferences, screen 
 const path = require('path');
 const fs = require('fs');
 
-let mainWindow, inputWindow, hotspotWindow;
-
+let mainWindow, inputWindow;
 
 app.whenReady().then(() => {
     // -- Main overlay window --
     mainWindow = new BrowserWindow({
-        transparent: true, frame: false, fullscreen: true,
-        alwaysOnTop: true, skipTaskbar: true, focusable: false,
+        transparent: true,
+        frame: false,
+        fullscreen: true,
+        alwaysOnTop: true,
+        skipTaskbar: true,
+        focusable: false,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             webSecurity: false,
             allowRunningInsecureContent: true
         }
     });
+
     mainWindow.loadFile('index.html');
     mainWindow.once('ready-to-show', () => {
+        // Open DevTools in detached mode for debugging the overlay
+        mainWindow.webContents.openDevTools({ mode: 'detach' });
+
+        // Start click-through behavior
         mainWindow.setIgnoreMouseEvents(true, { forward: true });
     });
-
-
-
-    // -- Hotspot window --
-    hotspotWindow = new BrowserWindow({
-        width: 60, height: 60, transparent: true, frame: false,
-        alwaysOnTop: true, skipTaskbar: true, focusable: true, show: false,
-        webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
-            contextIsolation: true,
-            webSecurity: false,
-            allowRunningInsecureContent: true
-        }
-    });
-    hotspotWindow.loadFile(path.join(__dirname, 'hotspot.html'));
 
     // -- Input window --
     inputWindow = new BrowserWindow({
         transparent: true,
-        frame: false, // Make sure this is false for custom window chrome
-        width: 350,   // Increased width for Status button
-        height: 60,   // Smaller height
+        frame: false,
+        width: 350,
+        height: 60,
         x: 50,
         y: 50,
         alwaysOnTop: true,
@@ -60,18 +53,21 @@ app.whenReady().then(() => {
         }
     });
 
-    // Remove CSP restrictions completely for testing
+    // Remove CSP header (for testing)
     inputWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
         callback({
             responseHeaders: {
                 ...details.responseHeaders,
-                // Remove Content-Security-Policy header completely
                 'Content-Security-Policy': undefined
             }
         });
     });
+
     inputWindow.loadFile(path.join(__dirname, 'input.html'));
     inputWindow.once('ready-to-show', () => {
+        // Open DevTools for the input window too
+        inputWindow.webContents.openDevTools({ mode: 'detach' });
+
         inputWindow.show();
         inputWindow.setAlwaysOnTop(true, 'screen-saver');
         inputWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
@@ -81,18 +77,18 @@ app.whenReady().then(() => {
 // -- IPC HANDLERS --
 ipcMain.on('enable-click', () => mainWindow?.setIgnoreMouseEvents(false));
 ipcMain.on('disable-click', () => mainWindow?.setIgnoreMouseEvents(true, { forward: true }));
-ipcMain.on('move-hotspot', (_, p) => {
-    hotspotWindow?.setPosition(p.x - 30, p.y - 30);
-    hotspotWindow?.show();
-    hotspotWindow?.webContents.send('position-update', p);
+ipcMain.on('show-hotspot', (_, coords) => {
+    console.log('Showing hotspot at coordinates:', coords);
+    mainWindow?.webContents.send('show-hotspot', coords);
 });
-ipcMain.on('hide-hotspot', () => hotspotWindow?.hide());
-ipcMain.on('hotspot-click', (_, pos) => console.log('Hotspot clicked at', pos));
+ipcMain.on('hide-hotspot', () => {
+    console.log('Hiding hotspot');
+    mainWindow?.webContents.send('hide-hotspot');
+});
 ipcMain.on('perform-system-click', (_, c) => {
     console.log('System click requested at:', c.x, c.y);
-    // robotjs removed - implement alternative click mechanism if needed
+    // implement alternative click here
 });
-
 ipcMain.on('resize-input-window', (_, { width, height }) => {
     console.log('Resizing input window to:', { width, height });
     if (inputWindow) {
@@ -110,76 +106,34 @@ ipcMain.on('resize-input-window', (_, { width, height }) => {
         inputWindow.setPosition(newX, newY);
     }
 });
-
 ipcMain.handle('get-screenshot', async () => {
     console.log('=== SCREENSHOT REQUEST RECEIVED ===');
-
     try {
-        // Check if we have screen recording permission on macOS
         if (process.platform === 'darwin') {
-            const { systemPreferences } = require('electron');
-            const hasPermission = systemPreferences.getMediaAccessStatus('screen');
-            console.log('macOS screen recording permission status:', hasPermission);
-
-            if (hasPermission !== 'granted') {
-                console.log('Requesting screen recording permission...');
+            const status = systemPreferences.getMediaAccessStatus('screen');
+            console.log('macOS screen recording permission:', status);
+            if (status !== 'granted') {
                 await systemPreferences.askForMediaAccess('screen');
             }
         }
-
-        console.log('Getting desktop capturer sources...');
         const sources = await desktopCapturer.getSources({
             types: ['screen'],
             thumbnailSize: { width: 1920, height: 1080 }
         });
-
-        if (sources.length === 0) {
-            console.error('No screen sources found');
-            return null;
-        }
-        console.log(`Found ${sources.length} screen sources`);
-
-        console.log('Converting thumbnail to PNG buffer...');
-        const pngBuffer = sources[0].thumbnail.toPNG();
-        console.log(`PNG buffer created, size: ${pngBuffer.length} bytes`);
-
-        console.log('Converting to base64...');
-        const base64Data = pngBuffer.toString('base64');
-
-        console.log(`Screenshot captured: ${base64Data.length} chars`);
-        console.log('Returning base64 data from main process...');
-
-        return base64Data;
-    } catch (error) {
-        console.error('Error capturing screenshot:', error);
-        console.error('Error stack:', error.stack);
-        throw error;
+        if (!sources.length) return null;
+        const png = sources[0].thumbnail.toPNG();
+        return png.toString('base64');
+    } catch (err) {
+        console.error('Error capturing screenshot:', err);
+        throw err;
     }
 });
-
 ipcMain.on('send-to-main-window', (_, data) => {
-    console.log('=== Main window received message ===');
-    console.log('Message data:', data);
-
+    console.log('=== Main window received message ===', data);
     if (data.type === 'create-hotspot') {
-        console.log('Creating hotspot...');
-        console.log('Hotspot window exists:', !!hotspotWindow);
-        console.log('Coordinates received:', data.coords);
-
-        const { x, y } = data.coords;
-        const windowX = x - 30;
-        const windowY = y - 30;
-
-        console.log('Setting hotspot window position to:', { x: windowX, y: windowY });
-        hotspotWindow?.setPosition(windowX, windowY);
-
-        console.log('Showing hotspot window...');
-        hotspotWindow?.show();
-
-        console.log('Sending position update to hotspot window...');
-        hotspotWindow?.webContents.send('position-update', data.coords);
-
-        console.log('Hotspot creation complete');
+        mainWindow?.webContents.send('show-hotspot', data.coords);
+    } else if (data.type === 'hide-hotspot') {
+        mainWindow?.webContents.send('hide-hotspot');
     } else {
         console.log('Unknown message type:', data.type);
     }
