@@ -24,7 +24,7 @@ app.whenReady().then(() => {
     mainWindow.loadFile('index.html');
     mainWindow.once('ready-to-show', () => {
         // Open DevTools in detached mode for debugging the overlay
-        mainWindow.webContents.openDevTools({ mode: 'detach' });
+        // mainWindow.webContents.openDevTools({ mode: 'detach' });
 
         // Start click-through behavior
         mainWindow.setIgnoreMouseEvents(true, { forward: true });
@@ -66,7 +66,7 @@ app.whenReady().then(() => {
     inputWindow.loadFile(path.join(__dirname, 'input.html'));
     inputWindow.once('ready-to-show', () => {
         // Open DevTools for the input window too
-        inputWindow.webContents.openDevTools({ mode: 'detach' });
+        // inputWindow.webContents.openDevTools({ mode: 'detach' });
 
         inputWindow.show();
         inputWindow.setAlwaysOnTop(true, 'screen-saver');
