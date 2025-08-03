@@ -1,17 +1,18 @@
-# Clueless: Turning Tech Troubles into Triumphs
+# Clueless  
+Empowering Businesses with On-the-Go Interactive Workflow Guidance
 
-Clueless is a cross-platform desktop AI assistant that guides users step-by-step through digital tasks—empowering anyone to use technology confidently and independently. No more overwhelming tutorials or relying on others—Clueless highlights, explains, and guides you in real time, right on your own screen.
+Clueless is an AI-powered desktop assistant built for businesses to deliver real-time, step-by-step visual guidance and support within their own software. Whether it’s onboarding new customers, answering “how-to” questions instantly, or solving support queries on the go, Clueless transforms static help docs into dynamic, on-screen walkthroughs—making your product intuitive, your customers successful, and your support teams more efficient.
 
 ---
 
-## 🚀 Features
+## 🚀 Key Features
 
-- **On-Screen Guidance**: Visual step-by-step highlights and cues over your existing apps.
-- **Conversational Interface**: Type or speak your goal—Clueless takes you there.
-- **Voice Assistance**: Natural instructions powered by ElevenLabs TTS.
-- **Multimodal AI**: Understands and processes text, images, and code using advanced LLMs (Claude/Anthropic, LangChain).
-- **Inclusive Design**: Accessible for elderly users, late tech adopters, and anyone struggling with digital tasks.
-- **Progressive Learning**: Builds user confidence over time instead of fostering dependency.
+- **On-the-Go Workflows**: Show users exactly what to do—live, in your own application. Perfect for onboarding, feature adoption, and support.
+- **Visual Step Guidance**: Instantly highlight buttons, forms, and next actions with clear visual cues—no more confusion or screen-sharing hassles.
+- **Conversational Support**: Users type or speak their question (e.g., “How do I add a user?”) and Clueless walks them through it in real time.
+- **Multimodal AI**: Powered by advanced LLMs (Anthropic Claude, LangChain) for smart, context-aware assistance and workflow creation.
+- **Voice Instructions**: ElevenLabs TTS delivers natural, accessible voice guidance for every workflow step.
+- **Seamless Integration**: Works as an overlay on top of your web or desktop application, requiring no change to your existing UI.
 
 ---
 
@@ -19,108 +20,50 @@ Clueless is a cross-platform desktop AI assistant that guides users step-by-step
 
 - **Backend**: Python, LangChain, Langraph
 - **Frontend**: Electron.js
-- **AI & Tools**: ElevenLabs (voice synthesis), aci.dev (AI infrastructure), Anthropic Claude (multimodal LLM: text, code, image)
-- **Capabilities**: Real-time UI automation, natural voice instructions, multimodal input/output
+- **AI & Tools**: ElevenLabs (voice synthesis), aci.dev (AI infrastructure), Anthropic Claude (multimodal LLM)
+- **Capabilities**: Visual UI automation, conversational workflow engine, voice-guided walkthroughs
 
 ---
 
-## 🎯 Who Is Clueless For?
+## 🎯 Use Cases
 
-- Elderly individuals & late tech adopters
-- Parents re-entering the workforce
-- Teachers adapting to digital classrooms
-- NGOs, community centers, and digital inclusion programs
-- Enterprises looking to streamline and partially automate tech support
-
----
-
-## 🌟 What Makes Clueless Different?
-
-- **Empowerment, Not Automation**: Teaches users to solve problems, rather than doing it all for them.
-- **Works With Existing Apps**: No need to learn new interfaces—guides you right where you are.
-- **Enterprise Potential**: Can reduce human tech support needs, saving costs while delivering 24/7 assistance.
+- **Customer Onboarding**: Guide new users through product setup and first-time tasks, reducing churn and support tickets.
+- **Feature Adoption**: Show users how to use new or underutilized features—right inside your app.
+- **Live Troubleshooting**: Resolve customer queries instantly with contextual, step-by-step on-screen assistance.
+- **Employee Training**: Accelerate internal onboarding and upskilling with interactive, self-paced guides.
 
 ---
 
-## 🔮 Future Roadmap
+## 🌟 Why Clueless for B2B?
 
-- Multilingual support & advanced accessibility
-- Deeper integration with enterprise IT support
-- Expansion into new platforms and use cases (education, remote work, more)
+- **Faster Onboarding**: Dramatically reduce onboarding time and boost customer activation.
+- **Reduced Support Load**: Empower users to solve problems independently, cutting down on repetitive support queries.
+- **Personalized Experience**: Deliver context-aware, in-app guidance tailored to each workflow or user segment.
+- **Scalable**: Roll out updates, new guides, and process changes instantly across your entire customer base or workforce.
+- **Actionable Insights**: Track workflow completion, identify friction points, and optimize your onboarding and support flows.
 
 ---
 
-## ⚡ Challenges
+## 🔮 Roadmap
 
-Building a seamless, integrated AI solution in just two days was a huge challenge! We focused on core features, rapid prototyping, and a scalable foundation to move fast and demonstrate impact.
+- Deeper API integrations for dynamic workflow generation
+- Advanced analytics and reporting dashboards
+- Mobile and web browser extension support
+- Multi-language and accessibility enhancements
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/yourusername/clueless.git
-cd clueless
-```
-
-### 2. Backend Setup
-
-```bash
-cd backend
-cp .env.example .env
-# Add your API keys (Anthropic, ElevenLabs) to .env
-pip install -r requirements.txt
-python setup_elevenlabs.py  # Or manually add ELEVENLABS_API_KEY to .env
-python test_tts.py          # Optional: test TTS integration
-python main.py              # Start the backend server (http://localhost:8000)
-```
-
-### 3. Frontend Setup
-
-```bash
-cd ../frontend
-npm install
-npm start
-```
-
----
-
-## 🖥️ Usage
-
-1. **Start the backend and frontend as above.**
-2. **Enter your instruction** in the input window (e.g., "Send an email to John on Gmail").
-3. **Follow the AI's step-by-step instructions**:
-    - Listen to the voice prompt.
-    - Click the highlighted hotspot on your screen.
-    - Continue until your goal is accomplished.
-4. **Control audio and check status** using the conversation interface buttons.
-
----
-
-## 🛠️ Customization
-
-- **Change Default Voice**: Edit `voice_id` in [`backend/tts_service.py`](backend/tts_service.py).
-- **Adjust Audio Volume**: Edit `audio.volume` in [`frontend/components/floatingBox.js`](frontend/components/floatingBox.js).
-- **UI Styling**: Modify CSS in [`frontend/styles.css`](frontend/styles.css) or [`frontend/consolidated.css`](frontend/consolidated.css).
-
----
-
-## 📚 Documentation
-
-- [backend/README.md](backend/README.md): Backend API, endpoints, and architecture.
-- [README_TTS.md](README_TTS.md): ElevenLabs TTS integration details.
-- [backend/ELEVENLABS_SETUP.md](backend/ELEVENLABS_SETUP.md): TTS setup and troubleshooting.
+_Coming soon: Full setup and integration instructions!_  
+Interested in a pilot? Contact us for a demo or early access.
 
 ---
 
 ## 🤝 Contributing
 
-1. Fork the repo and create a feature branch.
-2. Test your changes (`test_api_endpoints.py`, `test_tts.py`).
-3. Update documentation as needed.
-4. Submit a pull request.
+We welcome feedback, partnerships, and contributions from forward-thinking companies and developers!  
+Please open an issue or submit a pull request.
 
 ---
 
@@ -128,3 +71,4 @@ npm start
 
 MIT License
 
+---
