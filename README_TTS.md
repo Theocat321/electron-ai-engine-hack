@@ -128,6 +128,3 @@ npm start
 
 MIT License
 
----
-
-**Clueless** – Empowering everyone to master technology,
