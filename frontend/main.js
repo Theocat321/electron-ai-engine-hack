@@ -1,9 +1,12 @@
 // main.js
+const { log } = require('console');
 const { app, BrowserWindow, ipcMain, desktopCapturer, systemPreferences, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
-let mainWindow, inputWindow, hotspotWindow;
+app.disableHardwareAcceleration();
+
+let mainWindow, inputWindow;
 
 
 app.whenReady().then(() => {
@@ -14,6 +17,8 @@ app.whenReady().then(() => {
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             webSecurity: false,
+            nodeIntegration: false,
+            contextIsolation: true,
             allowRunningInsecureContent: true
         }
     });
@@ -24,18 +29,7 @@ app.whenReady().then(() => {
 
 
 
-    // -- Hotspot window --
-    hotspotWindow = new BrowserWindow({
-        width: 60, height: 60, transparent: true, frame: false,
-        alwaysOnTop: true, skipTaskbar: true, focusable: true, show: false,
-        webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
-            contextIsolation: true,
-            webSecurity: false,
-            allowRunningInsecureContent: true
-        }
-    });
-    hotspotWindow.loadFile(path.join(__dirname, 'hotspot.html'));
+
 
     // -- Input window --
     inputWindow = new BrowserWindow({
@@ -82,15 +76,31 @@ app.whenReady().then(() => {
 ipcMain.on('enable-click', () => mainWindow?.setIgnoreMouseEvents(false));
 ipcMain.on('disable-click', () => mainWindow?.setIgnoreMouseEvents(true, { forward: true }));
 ipcMain.on('move-hotspot', (_, p) => {
-    hotspotWindow?.setPosition(p.x - 30, p.y - 30);
-    hotspotWindow?.show();
-    hotspotWindow?.webContents.send('position-update', p);
+    mainWindow?.webContents.send('show-hotspot', p);
 });
-ipcMain.on('hide-hotspot', () => hotspotWindow?.hide());
+ipcMain.on('hide-hotspot', () => mainWindow?.webContents.send('hide-hotspot'));
 ipcMain.on('hotspot-click', (_, pos) => console.log('Hotspot clicked at', pos));
 ipcMain.on('perform-system-click', (_, c) => {
     console.log('System click requested at:', c.x, c.y);
     // robotjs removed - implement alternative click mechanism if needed
+});
+
+ipcMain.on('resize-input-window', (_, { width, height }) => {
+    console.log('Resizing input window to:', { width, height });
+    if (inputWindow) {
+        inputWindow.setSize(width, height);
+        // Optionally adjust position to keep window visible
+        const bounds = inputWindow.getBounds();
+        const display = screen.getPrimaryDisplay();
+        const screenWidth = display.workAreaSize.width;
+        const screenHeight = display.workAreaSize.height;
+
+        // Keep the window in the same relative position but ensure it's visible
+        const newX = Math.min(bounds.x, screenWidth - width);
+        const newY = Math.min(bounds.y, screenHeight - height);
+
+        inputWindow.setPosition(newX, newY);
+    }
 });
 
 ipcMain.on('resize-input-window', (_, { width, height }) => {
@@ -163,24 +173,39 @@ ipcMain.on('send-to-main-window', (_, data) => {
 
     if (data.type === 'create-hotspot') {
         console.log('Creating hotspot...');
-        console.log('Hotspot window exists:', !!hotspotWindow);
         console.log('Coordinates received:', data.coords);
 
-        const { x, y } = data.coords;
-        const windowX = x - 30;
-        const windowY = y - 30;
-
-        console.log('Setting hotspot window position to:', { x: windowX, y: windowY });
-        hotspotWindow?.setPosition(windowX, windowY);
-
-        console.log('Showing hotspot window...');
-        hotspotWindow?.show();
-
-        console.log('Sending position update to hotspot window...');
-        hotspotWindow?.webContents.send('position-update', data.coords);
+        console.log('Sending hotspot data to main window...');
+        mainWindow?.webContents.send('show-hotspot', data.coords);
 
         console.log('Hotspot creation complete');
     } else {
         console.log('Unknown message type:', data.type);
+    }
+});
+
+ipcMain.on('renderer-log', (event, message) => {
+    console.log('[Renderer]', message);
+});
+
+
+ipcMain.handle('call-backend', async (event, { screenshotBase64, userQuery }) => {
+    try {
+        const response = await fetch('http://127.0.0.1:8000/initialize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                screenshot_base64: screenshotBase64,
+                user_query: userQuery
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Backend error: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (err) {
+        return { error: err.message };
     }
 });

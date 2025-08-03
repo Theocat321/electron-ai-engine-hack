@@ -3,8 +3,6 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
     box.className = 'floating-box compact';
     box.id = 'input-box';
 
-    // We'll override these with CSS to make it fill the container
-    // but keep them here for backwards compatibility
     box.style.width = `${width}px`;
     box.style.height = `${height}px`;
 
@@ -14,12 +12,12 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
     const textarea = document.createElement('textarea');
     textarea.placeholder = 'Ask me anything...';
     textarea.className = 'floating-box-textarea';
-    textarea.setAttribute('data-no-drag', 'true'); // Mark as non-draggable
-    textarea.rows = 1; // Keep it to a single line
+    textarea.setAttribute('data-no-drag', 'true');
+    textarea.rows = 1;
 
     const button = document.createElement('button');
     button.className = 'send-icon-button';
-    button.setAttribute('data-no-drag', 'true'); // Mark as non-draggable
+    button.setAttribute('data-no-drag', 'true');
 
     const sendIcon = document.createElement('span');
     sendIcon.className = 'material-icons';
@@ -103,61 +101,37 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
     inputContainer.appendChild(statusButton);
     box.appendChild(inputContainer);
 
-    // No need for output element anymore
-
-    // Send button logic
-    button.addEventListener('click', () => {
+    // Submit logic
+    const handleSubmit = () => {
         const value = textarea.value.trim();
         if (value && sendCallback) {
-            // Call the callback with the input value
+            window.electronAPI.log(`[FloatingBox] Submitting instruction: ${value}`);
             sendCallback(value);
-
-            // Store the instruction for the conversation interface
             localStorage.setItem('currentInstruction', value);
 
-            // Create and display the conversation element
             const container = document.getElementById('input-container');
             if (container) {
-                // Remove the input box
                 box.remove();
-
-                // Create conversation interface with the instruction
                 createConversationInterface(container, value);
             }
         }
-    });
+    };
 
-    // Enable Enter key to submit
+    button.addEventListener('click', handleSubmit);
+
     textarea.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            const value = textarea.value.trim();
-            if (value && sendCallback) {
-                // Call the callback with the input value
-                sendCallback(value);
-
-                // Store the instruction for the conversation interface
-                localStorage.setItem('currentInstruction', value);
-
-                // Create and display the conversation element
-                const container = document.getElementById('input-container');
-                if (container) {
-                    // Remove the input box
-                    box.remove();
-
-                    // Create conversation interface with the instruction
-                    createConversationInterface(container, value);
-                }
-            }
+            handleSubmit();
         }
     });
 
     return box;
 }
 
-// Helper function to create the conversation interface
+// Helper function
 function createConversationInterface(container, instruction) {
-    console.log('Creating conversation interface...');
+    window.electronAPI.log(`[FloatingBox] Creating conversation interface for: ${instruction}`);
 
     const conversationBox = document.createElement('div');
     conversationBox.className = 'conversation-box';
@@ -270,23 +244,41 @@ function createConversationInterface(container, instruction) {
         }
     }
 
-    // Function to show loading state
-    function showLoading() {
-        console.log('Showing loading state...');
+    const messageContainer = document.createElement('div');
+    messageContainer.className = 'message-container';
+
+    const messageText = document.createElement('p');
+    messageText.className = 'message-text';
+    messageText.textContent = 'Processing your request...';
+
+    const nextButton = document.createElement('button');
+    nextButton.className = 'next-button';
+    nextButton.textContent = 'Loading...';
+    nextButton.disabled = true;
+    nextButton.setAttribute('data-no-drag', 'true');
+
+    messageContainer.appendChild(messageText);
+    conversationBox.appendChild(messageContainer);
+    conversationBox.appendChild(nextButton);
+    container.appendChild(conversationBox);
+
+    setTimeout(() => {
+        updateWindowSize();
+    }, 100);
+
+    // State functions
+    const showLoading = () => {
         nextButton.disabled = true;
         nextButton.textContent = 'Loading...';
         messageText.textContent = 'Processing your request...';
-        updateWindowSize();
-        console.log('Loading state applied');
-    }
+        window.electronAPI.log('[FloatingBox] Loading state applied');
+    };
 
-    // Function to hide loading state  
-    function hideLoading() {
-        console.log('Hiding loading state...');
+    const hideLoading = () => {
         nextButton.disabled = false;
         nextButton.textContent = 'Next';
-        console.log('Loading state removed');
-    }
+        window.electronAPI.log('[FloatingBox] Loading state removed');
+    };
 
     // Function to make API request
     async function makeApiRequest(isInitial = true) {
@@ -327,12 +319,11 @@ function createConversationInterface(container, instruction) {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(requestBody)
+
             });
 
-            console.log('Response received:', { status: response.status, ok: response.ok });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            if (data.error) {
+                throw new Error(data.error);
             }
 
             console.log('Parsing JSON response...');
@@ -346,10 +337,10 @@ function createConversationInterface(container, instruction) {
             console.log('Updating message text to:', data.task_description || data.task || 'Request completed');
             messageText.textContent = data.task_description || data.task || 'Request completed';
 
-            // Update window size after text content changes
-            setTimeout(() => {
-                updateWindowSize();
-            }, 100); // Small delay to ensure text is rendered
+
+            if (window.electronAPI && data.x !== undefined && data.y !== undefined) {
+                window.electronAPI.log('[FloatingBox] Sending hotspot to main process...');
+                window.electronAPI.sendToMainWindow({
 
             // Create hotspot using the coordinates from the response
             console.log('Checking for electronAPI and coordinates...');
@@ -391,25 +382,15 @@ function createConversationInterface(container, instruction) {
                         console.error('Error resetting session:', error);
                     }
                 };
+
             }
-
         } catch (error) {
-            console.error('Error making API request:', error);
-            console.error('Error details:', {
-                name: error.name,
-                message: error.message,
-                stack: error.stack
-            });
+            window.electronAPI.log(`[FloatingBox] Error: ${error.message}`);
+            window.electronAPI.log(`Stacktrace: ${error.stack}`);
+            messageText.textContent = 'Error processing request.';
 
-            messageText.textContent = 'Sorry, there was an error processing your request.';
-
-            // Update window size after error message
-            setTimeout(() => {
-                updateWindowSize();
-            }, 100);
         } finally {
             hideLoading();
-            console.log('=== API Request Complete ===');
         }
     }
 
@@ -454,4 +435,5 @@ function createConversationInterface(container, instruction) {
     // Automatically trigger the API request when the interface is created
     console.log('Conversation interface created, triggering initial API request...');
     makeApiRequest(true);  // true for initial request
+
 }

@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
         nextButton.disabled = true;
         nextButton.textContent = 'Loading...';
         messageText.textContent = 'Processing your request...';
+        updateWindowSize();
         console.log('Loading state applied');
     }
 
@@ -31,11 +32,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Get the instruction from localStorage (set by the input window)
             const instruction = localStorage.getItem('currentInstruction') || "How do I send an email?";
-            
+
             // Capture screenshot and save it
             console.log('Capturing screenshot...');
             const screenshotBase64 = await window.electronAPI.getScreenshot();
-            
+
             // Convert base64 to blob
             const byteCharacters = atob(screenshotBase64);
             const byteNumbers = new Array(byteCharacters.length);
@@ -44,16 +45,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const byteArray = new Uint8Array(byteNumbers);
             const blob = new Blob([byteArray], { type: 'image/png' });
-            
+
             // Create FormData with image and query
             const formData = new FormData();
             formData.append('image_path', blob, 'img.png');
             formData.append('query', instruction);
-            
-            console.log('Making fetch request to http://localhost:8000/run');
+
+            console.log('Making fetch request to http://localhost:8000/initialize');
             console.log('Query:', instruction);
-            
-            const response = await fetch('http://localhost:8000/run', {
+
+            const response = await fetch('http://localhost:8000/initialize', {
                 method: 'POST',
                 body: formData
             });
@@ -71,6 +72,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Update the message text with the response
             console.log('Updating message text to:', data.text || data.message || 'Request completed');
             messageText.textContent = data.text || data.message || 'Request completed';
+
+            setTimeout(() => {
+                updateWindowSize();
+            }, 100); // Small delay to ensure text is rendered
 
             // Create hotspot using the coordinates from the response
             console.log('Checking for electronAPI and coords...');
@@ -99,6 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Error making API request:', error);
             messageText.textContent = 'Sorry, there was an error processing your request.';
+            setTimeout(() => {
+                updateWindowSize();
+            }, 100);
         } finally {
             hideLoading();
             console.log('=== API Request Complete ===');
