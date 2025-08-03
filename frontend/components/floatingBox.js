@@ -32,33 +32,33 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
     statusButton.className = 'status-button';
     statusButton.textContent = 'Status';
     statusButton.setAttribute('data-no-drag', 'true');
-    
+
     // Add debounce mechanism to prevent multiple rapid clicks
     let isStatusLoading = false;
-    
+
     // Simple synchronous handler to avoid GLib issues
     const handleStatusClick = () => {
         if (isStatusLoading) return;
         isStatusLoading = true;
         statusButton.disabled = true;
         statusButton.textContent = 'Loading...';
-        
+
         // Use setTimeout to defer the async operation
         setTimeout(async () => {
             try {
                 console.log('Fetching status from backend...');
                 console.log('About to fetch from:', 'http://localhost:8000/status');
                 console.log('Window location:', window.location.href);
-                
+
                 const response = await fetch('http://localhost:8000/status');
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const data = await response.json();
                 console.log('Status response:', data);
-                
+
                 // Log status instead of alert to avoid potential GLib issues
                 console.log('=== STATUS ===');
                 console.log(`Status: ${data.status}`);
@@ -70,13 +70,13 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
                     console.log(`Task History Count: ${data.task_history_count || 0}`);
                 }
                 console.log('=== END STATUS ===');
-                
+
                 // Update button text to show success
                 statusButton.textContent = 'Success!';
                 setTimeout(() => {
                     statusButton.textContent = 'Status';
                 }, 1000);
-                
+
             } catch (error) {
                 console.error('Error fetching status:', error);
                 console.error('Error details:', {
@@ -94,7 +94,7 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
             }
         }, 0);
     };
-    
+
     // Add event listener with proper cleanup
     statusButton.addEventListener('click', handleStatusClick);
 
@@ -180,33 +180,33 @@ function createConversationInterface(container, instruction) {
     conversationStatusButton.className = 'status-button';
     conversationStatusButton.textContent = 'Status';
     conversationStatusButton.setAttribute('data-no-drag', 'true');
-    
+
     // Add debounce mechanism to prevent multiple rapid clicks
     let isConversationStatusLoading = false;
-    
+
     // Simple synchronous handler to avoid GLib issues
     const handleConversationStatusClick = () => {
         if (isConversationStatusLoading) return;
         isConversationStatusLoading = true;
         conversationStatusButton.disabled = true;
         conversationStatusButton.textContent = 'Loading...';
-        
+
         // Use setTimeout to defer the async operation
         setTimeout(async () => {
             try {
                 console.log('Fetching status from backend...');
                 console.log('About to fetch from:', 'http://localhost:8000/status');
                 console.log('Window location:', window.location.href);
-                
+
                 const response = await fetch('http://localhost:8000/status');
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const data = await response.json();
                 console.log('Status response:', data);
-                
+
                 // Log status instead of alert to avoid potential GLib issues
                 console.log('=== STATUS ===');
                 console.log(`Status: ${data.status}`);
@@ -218,13 +218,13 @@ function createConversationInterface(container, instruction) {
                     console.log(`Task History Count: ${data.task_history_count || 0}`);
                 }
                 console.log('=== END STATUS ===');
-                
+
                 // Update button text to show success
                 conversationStatusButton.textContent = 'Success!';
                 setTimeout(() => {
                     conversationStatusButton.textContent = 'Status';
                 }, 1000);
-                
+
             } catch (error) {
                 console.error('Error fetching status:', error);
                 console.error('Error details:', {
@@ -242,7 +242,7 @@ function createConversationInterface(container, instruction) {
             }
         }, 0);
     };
-    
+
     // Add event listener with proper cleanup
     conversationStatusButton.addEventListener('click', handleConversationStatusClick);
 
@@ -300,7 +300,7 @@ function createConversationInterface(container, instruction) {
             const screenshotBase64 = await window.electronAPI.getScreenshot();
 
             let endpoint, requestBody;
-            
+
             if (isInitial) {
                 // First request - use initialize endpoint
                 endpoint = 'http://localhost:8000/initialize';
@@ -343,8 +343,8 @@ function createConversationInterface(container, instruction) {
             window.currentTaskData = data;
 
             // Update the message text with the task description
-            console.log('Updating message text to:', data.task_description || data.task || 'Request completed');
-            messageText.textContent = data.task_description || data.task || 'Request completed';
+            console.log('Updating message text to:', data.task || data.task_description || 'Request completed');
+            messageText.textContent = data.task || data.task_description || 'Request completed';
 
             // Update window size after text content changes
             setTimeout(() => {
@@ -380,7 +380,7 @@ function createConversationInterface(container, instruction) {
                 messageText.textContent = 'All tasks completed successfully!';
                 nextButton.textContent = 'Start New Task';
                 nextButton.disabled = false;
-                
+
                 // Reset the session when clicking after completion
                 nextButton.onclick = async () => {
                     try {
@@ -415,15 +415,15 @@ function createConversationInterface(container, instruction) {
 
     // Track if this is the first request
     let isFirstRequest = true;
-    
+
     // Add click handler to the next button
     nextButton.addEventListener('click', () => {
         console.log('=== Next button clicked ===');
         console.log('Is first request:', isFirstRequest);
-        
+
         // Only call update_screenshot after the initial request
         makeApiRequest(isFirstRequest);
-        
+
         // After first request, all subsequent requests should use update_screenshot
         if (isFirstRequest) {
             isFirstRequest = false;
