@@ -22,7 +22,7 @@ class OrchestrationAgent:
     a sequence of tasks that need to be executed to fulfill the user's request.
     """
     
-    def __init__(self, model_name: str = "claude-3-5-sonnet-20241022"):
+    def __init__(self, model_name: str = "claude-sonnet-4-20250514"):
         # Verify Anthropic API key is available
         if not os.getenv("ANTHROPIC_API_KEY"):
             raise ValueError("ANTHROPIC_API_KEY environment variable is required. Please add it to your .env file.")
