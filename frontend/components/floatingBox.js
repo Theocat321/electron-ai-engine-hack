@@ -27,12 +27,6 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
 
     button.appendChild(sendIcon);
 
-    // Add Status button
-    const statusButton = document.createElement('button');
-    statusButton.className = 'status-button';
-    statusButton.textContent = 'Status';
-    statusButton.setAttribute('data-no-drag', 'true');
-
     // Add debounce mechanism to prevent multiple rapid clicks
     let isStatusLoading = false;
 
@@ -40,8 +34,6 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
     const handleStatusClick = () => {
         if (isStatusLoading) return;
         isStatusLoading = true;
-        statusButton.disabled = true;
-        statusButton.textContent = 'Loading...';
 
         // Use setTimeout to defer the async operation
         setTimeout(async () => {
@@ -71,11 +63,7 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
                 }
                 console.log('=== END STATUS ===');
 
-                // Update button text to show success
-                statusButton.textContent = 'Success!';
-                setTimeout(() => {
-                    statusButton.textContent = 'Status';
-                }, 1000);
+
 
             } catch (error) {
                 console.error('Error fetching status:', error);
@@ -84,23 +72,17 @@ export function createFloatingBox(sendCallback, width = 300, height = 50) {
                     message: error.message,
                     stack: error.stack
                 });
-                statusButton.textContent = `Error: ${error.message}`;
-                setTimeout(() => {
-                    statusButton.textContent = 'Status';
-                }, 3000);
+
             } finally {
                 isStatusLoading = false;
-                statusButton.disabled = false;
             }
         }, 0);
     };
 
     // Add event listener with proper cleanup
-    statusButton.addEventListener('click', handleStatusClick);
 
     inputContainer.appendChild(textarea);
     inputContainer.appendChild(button);
-    inputContainer.appendChild(statusButton);
     box.appendChild(inputContainer);
 
     // No need for output element anymore
@@ -214,12 +196,6 @@ function createConversationInterface(container, instruction) {
     nextButton.disabled = true;
     nextButton.setAttribute('data-no-drag', 'true');
 
-    // Add Status button to conversation interface
-    const conversationStatusButton = document.createElement('button');
-    conversationStatusButton.className = 'status-button';
-    conversationStatusButton.textContent = 'Status';
-    conversationStatusButton.setAttribute('data-no-drag', 'true');
-
     // Add debounce mechanism to prevent multiple rapid clicks
     let isConversationStatusLoading = false;
 
@@ -227,8 +203,6 @@ function createConversationInterface(container, instruction) {
     const handleConversationStatusClick = () => {
         if (isConversationStatusLoading) return;
         isConversationStatusLoading = true;
-        conversationStatusButton.disabled = true;
-        conversationStatusButton.textContent = 'Loading...';
 
         // Use setTimeout to defer the async operation
         setTimeout(async () => {
@@ -258,11 +232,7 @@ function createConversationInterface(container, instruction) {
                 }
                 console.log('=== END STATUS ===');
 
-                // Update button text to show success
-                conversationStatusButton.textContent = 'Success!';
-                setTimeout(() => {
-                    conversationStatusButton.textContent = 'Status';
-                }, 1000);
+
 
             } catch (error) {
                 console.error('Error fetching status:', error);
@@ -271,19 +241,12 @@ function createConversationInterface(container, instruction) {
                     message: error.message,
                     stack: error.stack
                 });
-                conversationStatusButton.textContent = `Error: ${error.message}`;
-                setTimeout(() => {
-                    conversationStatusButton.textContent = 'Status';
-                }, 3000);
+
             } finally {
                 isConversationStatusLoading = false;
-                conversationStatusButton.disabled = false;
             }
         }, 0);
     };
-
-    // Add event listener with proper cleanup
-    conversationStatusButton.addEventListener('click', handleConversationStatusClick);
 
     // Function to calculate and update window size based on content
     function updateWindowSize() {
@@ -491,7 +454,6 @@ function createConversationInterface(container, instruction) {
     buttonContainer.style.justifyContent = 'center';
 
     buttonContainer.appendChild(nextButton);
-    buttonContainer.appendChild(conversationStatusButton);
 
     messageContainer.appendChild(messageText);
     conversationBox.appendChild(messageContainer);
