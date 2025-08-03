@@ -24,7 +24,7 @@ class TTSService:
         self.client = ElevenLabs(api_key=self.api_key)
         logger.info("ElevenLabs TTS service initialized")
     
-    def text_to_speech(self, text, voice_id="21m00Tcm4TlvDq8ikWAM", model_id="eleven_monolingual_v1"):
+    def text_to_speech(self, text, voice_id="EXAVITQu4vr4xnSDxMaL", model_id="eleven_monolingual_v1"):
         """
         Convert text to speech using ElevenLabs API.
         

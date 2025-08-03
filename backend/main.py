@@ -30,10 +30,10 @@ app.add_middleware(
 current_state: Optional[AgentState] = None
 
 
-def generate_audio_for_text(text: str) -> Optional[str]:
+def generate_audio_for_text(text: str, voice_id: str = "21m00Tcm4TlvDq8ikWAM") -> Optional[str]:
     """Generate audio for the given text using TTS service."""
     try:
-        result = tts_service.text_to_speech(text)
+        result = tts_service.text_to_speech(text, voice_id=voice_id)
         if "error" not in result:
             return result.get("audio_base64")
     except Exception as e:
